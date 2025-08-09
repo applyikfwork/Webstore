@@ -5,10 +5,8 @@ export interface App {
   name: string;
   type: 'apk' | 'website';
   apkUrl?: string;
-  apkPath?: string;
   websiteUrl?: string;
   iconUrl: string;
-  iconPath: string;
   description: string;
   featureHighlights: string;
   createdAt: Timestamp;

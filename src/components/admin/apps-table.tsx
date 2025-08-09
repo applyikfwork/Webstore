@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, orderBy, query, deleteDoc, doc } from "firebase/firestore";
-import { deleteObject, ref } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import type { App } from "@/lib/types";
 import {
   Table,
@@ -71,13 +70,9 @@ export function AppsTable({ onEdit }: AppsTableProps) {
         try {
             await deleteDoc(doc(db, "apps", appToDelete.id));
 
-            const iconRef = ref(storage, appToDelete.iconPath);
-            await deleteObject(iconRef).catch(err => console.warn("Icon deletion may have failed:", err));
-
-            if (appToDelete.type === 'apk' && appToDelete.apkPath) {
-                const apkRef = ref(storage, appToDelete.apkPath);
-                await deleteObject(apkRef).catch(err => console.warn("APK deletion may have failed:", err));
-            }
+            // Note: Deleting from Cloudinary would require a separate backend action 
+            // and is not implemented here for security reasons. 
+            // The files will remain in Cloudinary but will no longer be linked in the app.
 
             toast({
                 title: "Success",
@@ -175,7 +170,7 @@ export function AppsTable({ onEdit }: AppsTableProps) {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete "{appToDelete?.name}" and remove its data from our servers.
+                        This action cannot be undone. This will permanently delete "{appToDelete?.name}" and remove its data from our servers. The uploaded files will remain on Cloudinary.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

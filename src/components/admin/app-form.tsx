@@ -19,11 +19,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { addDoc, collection, doc, serverTimestamp, updateDoc } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import type { App } from "@/lib/types";
 import { Wand2, Loader2 } from "lucide-react";
 import { generateAppDescription } from "@/ai/flows/generate-app-description";
+import { uploadToCloudinary } from "@/lib/cloudinary";
+
 
 const AppFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -85,13 +86,6 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         }
     };
 
-    const uploadFile = async (file: File, path: string): Promise<{ url: string; path: string }> => {
-        const storageRef = ref(storage, path);
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-        return { url, path };
-    };
-
     async function onSubmit(data: AppFormValues) {
         setIsSubmitting(true);
         try {
@@ -106,26 +100,31 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                 return;
             }
 
-            let iconData = { url: initialData?.iconUrl || '', path: initialData?.iconPath || '' };
-            if (data.icon && data.icon.length > 0) {
+            let iconUrl = initialData?.iconUrl;
+            if (data.icon && data.icon[0]) {
                 const iconFile = data.icon[0];
-                iconData = await uploadFile(iconFile, `icons/${Date.now()}_${iconFile.name}`);
+                const formData = new FormData();
+                formData.append('file', iconFile);
+                const result = await uploadToCloudinary(formData, 'auto');
+                iconUrl = result.secure_url;
             }
 
-            let apkData = { url: initialData?.apkUrl, path: initialData?.apkPath };
-            if (data.type === 'apk' && data.apk && data.apk.length > 0) {
-                const apkFile = data.apk[0];
-                apkData = await uploadFile(apkFile, `apks/${Date.now()}_${apkFile.name}`);
+            let apkUrl = initialData?.apkUrl;
+            if (data.type === 'apk' && data.apk && data.apk[0]) {
+                 const apkFile = data.apk[0];
+                const formData = new FormData();
+                formData.append('file', apkFile);
+                const result = await uploadToCloudinary(formData, 'raw');
+                apkUrl = result.secure_url;
             }
+
 
             const appPayload: Omit<App, 'id' | 'createdAt'> & { createdAt?: any } = {
                 name: data.name,
                 type: data.type,
                 websiteUrl: data.type === 'website' ? data.websiteUrl : '',
-                apkUrl: data.type === 'apk' ? apkData.url : '',
-                apkPath: data.type === 'apk' ? apkData.path : '',
-                iconUrl: iconData.url,
-                iconPath: iconData.path,
+                apkUrl: data.type === 'apk' ? apkUrl : '',
+                iconUrl: iconUrl!,
                 description: data.description,
                 featureHighlights: data.featureHighlights,
             };
