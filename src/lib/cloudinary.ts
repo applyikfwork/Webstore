@@ -2,13 +2,20 @@
 
 import { v2 as cloudinary } from 'cloudinary';
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+export async function uploadToCloudinary(
+  formData: FormData,
+  resource_type: 'image' | 'raw' | 'video' | 'auto',
+  cloudName: string,
+  apiKey: string,
+  apiSecret: string
+) {
+  
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+  });
 
-export async function uploadToCloudinary(formData: FormData, resource_type: 'image' | 'raw' | 'video' | 'auto') {
   const file = formData.get('file') as File;
   if (!file) {
     throw new Error('No file provided');
