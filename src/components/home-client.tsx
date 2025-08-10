@@ -6,12 +6,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Badge } from "./ui/badge";
-import { Globe, Download, Eye } from "lucide-react";
+import { Globe, Download, Eye, Star } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AdRenderer } from "./ad-renderer";
+import { cn } from "@/lib/utils";
 
 
 function AppCard({ app }: { app: App }) {
@@ -26,7 +27,18 @@ function AppCard({ app }: { app: App }) {
     }
 
     return (
-        <Card className="flex flex-col w-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02] bg-card border group">
+        <Card className={cn(
+            "flex flex-col w-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02] bg-card border group relative",
+             app.featured && "border-primary/50 shadow-lg ring-2 ring-primary/20"
+             )}>
+            {app.featured && (
+                <div className="absolute top-2 right-2 z-10">
+                    <Badge variant="default" className="bg-amber-400 text-amber-900 hover:bg-amber-400/90 shadow-md">
+                        <Star className="h-3 w-3 mr-1.5 fill-amber-900"/>
+                        Featured
+                    </Badge>
+                </div>
+            )}
             <CardHeader className="flex-row items-center gap-4 p-4">
                  <Image
                     src={app.iconUrl}

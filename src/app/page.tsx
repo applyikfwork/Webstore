@@ -26,7 +26,8 @@ async function getApps(): Promise<App[]> {
             createdAt: data.createdAt.toDate().toISOString(),
         } as App;
     });
-    return apps;
+    // Sort featured apps to the top
+    return apps.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
 }
 
 export default async function Home() {

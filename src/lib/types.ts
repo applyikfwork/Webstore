@@ -9,11 +9,11 @@ export interface App {
   description: string;
   featureHighlights: string;
   createdAt: Timestamp | string;
-  // New fields based on the design
   version?: string;
   downloads?: number;
   tags?: string[];
   screenshots?: string[];
+  featured?: boolean;
 }
 
 export interface SiteSettingsData {

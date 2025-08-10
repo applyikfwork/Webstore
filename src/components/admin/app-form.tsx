@@ -21,8 +21,9 @@ import { useState } from "react";
 import { addDoc, collection, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { App } from "@/lib/types";
-import { Wand2, Loader2 } from "lucide-react";
+import { Wand2, Loader2, Star } from "lucide-react";
 import { generateAppDescription } from "@/ai/flows/generate-app-description";
+import { Switch } from "../ui/switch";
 
 
 const AppFormSchema = z.object({
@@ -36,6 +37,7 @@ const AppFormSchema = z.object({
   version: z.string().optional(),
   tags: z.string().optional(),
   downloads: z.coerce.number().min(0).optional(),
+  featured: z.boolean().default(false),
   screenshot1: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
   screenshot2: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
   screenshot3: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
@@ -67,6 +69,7 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
             ...initialData,
             tags: initialData.tags?.join(', '),
             downloads: initialData.downloads || 0,
+            featured: initialData.featured || false,
             screenshot1: initialData.screenshots?.[0] || '',
             screenshot2: initialData.screenshots?.[1] || '',
             screenshot3: initialData.screenshots?.[2] || '',
@@ -83,6 +86,7 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
             version: "1.0.0",
             tags: "",
             downloads: 0,
+            featured: false,
             screenshot1: '',
             screenshot2: '',
             screenshot3: '',
@@ -136,6 +140,7 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                 tags: data.tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
                 downloads: data.downloads,
                 screenshots: screenshots,
+                featured: data.featured,
             };
 
             if (initialData?.id) {
@@ -159,6 +164,29 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                
+                 <FormField
+                    control={form.control}
+                    name="featured"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-secondary/50">
+                        <div className="space-y-0.5">
+                            <FormLabel className="flex items-center gap-2"><Star className="text-amber-400 fill-amber-400" /> Mark as Featured</FormLabel>
+                            <FormDescription>
+                                Featured apps appear first and are highlighted on the homepage.
+                            </FormDescription>
+                        </div>
+                        <FormControl>
+                            <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            />
+                        </FormControl>
+                        </FormItem>
+                    )}
+                />
+
+
                 <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem><FormLabel>App Name</FormLabel><FormControl><Input placeholder="My Awesome App" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
@@ -252,5 +280,3 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         </Form>
     );
 }
-
-    
