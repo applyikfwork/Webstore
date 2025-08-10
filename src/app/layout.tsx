@@ -28,11 +28,22 @@ export const metadata: Metadata = {
 };
 
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let fetchedIconUrl = '/favicon.ico';
+    try {
+        const docRef = doc(db, "settings", "site");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().iconUrl) {
+            fetchedIconUrl = docSnap.data().iconUrl;
+        }
+    } catch (error) {
+        console.error("Could not fetch site icon for layout", error);
+    }
+    
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
@@ -42,7 +53,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
-          <Header iconUrl={iconUrl} />
+          <Header iconUrl={fetchedIconUrl} />
           <main>{children}</main>
         </AuthProvider>
         <Toaster />
