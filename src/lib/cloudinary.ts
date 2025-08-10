@@ -4,16 +4,13 @@ import { v2 as cloudinary } from 'cloudinary';
 
 export async function uploadToCloudinary(
   formData: FormData,
-  resource_type: 'image' | 'raw' | 'video' | 'auto',
-  cloudName: string,
-  apiKey: string,
-  apiSecret: string
+  resource_type: 'image' | 'raw' | 'video' | 'auto'
 ) {
   
   cloudinary.config({
-    cloud_name: cloudName,
-    api_key: apiKey,
-    api_secret: apiSecret,
+    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 
   const file = formData.get('file') as File;
@@ -44,3 +41,5 @@ export async function uploadToCloudinary(
 
   return results as { secure_url: string };
 }
+
+    

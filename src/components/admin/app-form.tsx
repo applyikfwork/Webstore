@@ -100,16 +100,12 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                 return;
             }
 
-            const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
-            const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY!;
-            const apiSecret = process.env.NEXT_PUBLIC_CLOUDINARY_API_SECRET!;
-
             let iconUrl = initialData?.iconUrl;
             if (data.icon && data.icon[0]) {
                 const iconFile = data.icon[0];
                 const formData = new FormData();
                 formData.append('file', iconFile);
-                const result = await uploadToCloudinary(formData, 'auto', cloudName, apiKey, apiSecret);
+                const result = await uploadToCloudinary(formData, 'auto');
                 iconUrl = result.secure_url;
             }
 
@@ -118,7 +114,7 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                  const apkFile = data.apk[0];
                 const formData = new FormData();
                 formData.append('file', apkFile);
-                const result = await uploadToCloudinary(formData, 'raw', cloudName, apiKey, apiSecret);
+                const result = await uploadToCloudinary(formData, 'raw');
                 apkUrl = result.secure_url;
             }
 
@@ -211,3 +207,5 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         </Form>
     );
 }
+
+    

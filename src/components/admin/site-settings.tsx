@@ -61,15 +61,11 @@ export function SiteSettings() {
                 setIsSubmitting(false);
                 return;
             }
-
-            const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
-            const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY!;
-            const apiSecret = process.env.NEXT_PUBLIC_CLOUDINARY_API_SECRET!;
             
             const iconFile = data.icon[0];
             const formData = new FormData();
             formData.append('file', iconFile);
-            const result = await uploadToCloudinary(formData, 'image', cloudName, apiKey, apiSecret);
+            const result = await uploadToCloudinary(formData, 'image');
             const iconUrl = result.secure_url;
 
             await setDoc(doc(db, "settings", "site"), { iconUrl });
@@ -135,3 +131,5 @@ export function SiteSettings() {
         </Card>
     );
 }
+
+    
