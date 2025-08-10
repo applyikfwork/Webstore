@@ -188,9 +188,9 @@ export function AppDetailClient({ initialApp, appId }: AppDetailClientProps) {
             </div>
         </div>
 
-        {adSettings?.appDetailPageAdCode && (
+        {adSettings?.appDetailPageAdKey && (
             <div className="my-8 flex justify-center">
-                <AdRenderer adCode={adSettings.appDetailPageAdCode} />
+                <AdRenderer adKey={adSettings.appDetailPageAdKey} />
             </div>
         )}
 

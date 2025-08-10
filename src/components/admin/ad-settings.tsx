@@ -25,8 +25,8 @@ import type { AdSettingsData } from "@/lib/types";
 
 
 const AdSettingsSchema = z.object({
-  homePageAdCode: z.string().optional(),
-  appDetailPageAdCode: z.string().optional(),
+  homePageAdKey: z.string().optional(),
+  appDetailPageAdKey: z.string().optional(),
 });
 
 type AdSettingsFormValues = z.infer<typeof AdSettingsSchema>;
@@ -39,8 +39,8 @@ export function AdSettings() {
     const form = useForm<AdSettingsFormValues>({
         resolver: zodResolver(AdSettingsSchema),
         defaultValues: {
-            homePageAdCode: "",
-            appDetailPageAdCode: "",
+            homePageAdKey: "",
+            appDetailPageAdKey: "",
         }
     });
 
@@ -51,8 +51,8 @@ export function AdSettings() {
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const settings = docSnap.data() as AdSettingsData;
-                form.setValue("homePageAdCode", settings.homePageAdCode || "");
-                form.setValue("appDetailPageAdCode", settings.appDetailPageAdCode || "");
+                form.setValue("homePageAdKey", settings.homePageAdKey || "");
+                form.setValue("appDetailPageAdKey", settings.appDetailPageAdKey || "");
             }
             setLoading(false);
         };
@@ -64,8 +64,8 @@ export function AdSettings() {
         setIsSubmitting(true);
         try {
             await setDoc(doc(db, "settings", "ads"), { 
-                homePageAdCode: data.homePageAdCode,
-                appDetailPageAdCode: data.appDetailPageAdCode 
+                homePageAdKey: data.homePageAdKey,
+                appDetailPageAdKey: data.appDetailPageAdKey 
             }, { merge: true });
             
             toast({ title: "Success", description: "Ad settings updated successfully." });
@@ -81,38 +81,30 @@ export function AdSettings() {
         <Card>
             <CardHeader>
                 <CardTitle>Advertisement Settings</CardTitle>
-                <CardDescription>Manage the ad codes for different sections of your website. Paste the HTML/JS code from Adsterra or another provider.</CardDescription>
+                <CardDescription>Manage the ad keys for different sections of your website. Paste the key from Adsterra.</CardDescription>
             </CardHeader>
             <CardContent>
                  <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         
-                        <FormField control={form.control} name="homePageAdCode" render={({ field }) => (
+                        <FormField control={form.control} name="homePageAdKey" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Home Page Ad Script</FormLabel>
+                                <FormLabel>Home Page Ad Key</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Paste ad script from your provider..." {...field} className="font-mono text-xs" />
+                                    <Input placeholder="e.g., e25102b7dcf781e429599a169bfcf76e" {...field} className="font-mono text-xs" />
                                 </FormControl>
                                 <FormDescription>This ad will be displayed on the main app listing page.</FormDescription>
-                                <div className="p-4 border-dashed border-2 rounded-lg mt-2 text-center text-muted-foreground bg-muted/50">
-                                    <p className="font-semibold">Ad Preview Area</p>
-                                    <p className="text-sm">Your ad will be rendered here (e.g., 728x90)</p>
-                                </div>
                                 <FormMessage />
                             </FormItem>
                         )} />
 
-                         <FormField control={form.control} name="appDetailPageAdCode" render={({ field }) => (
+                         <FormField control={form.control} name="appDetailPageAdKey" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>App Detail Page Ad Script</FormLabel>
+                                <FormLabel>App Detail Page Ad Key</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Paste ad script from your provider..." {...field} className="font-mono text-xs" />
+                                    <Input placeholder="e.g., e25102b7dcf781e429599a169bfcf76e" {...field} className="font-mono text-xs" />
                                 </FormControl>
                                 <FormDescription>This ad will be displayed on each individual app's page.</FormDescription>
-                                 <div className="p-4 border-dashed border-2 rounded-lg mt-2 text-center text-muted-foreground bg-muted/50">
-                                    <p className="font-semibold">Ad Preview Area</p>
-                                    <p className="text-sm">Your ad will be rendered here (e.g., 300x250)</p>
-                                </div>
                                 <FormMessage />
                             </FormItem>
                         )} />

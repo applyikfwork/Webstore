@@ -22,6 +22,6 @@ export interface SiteSettingsData {
 }
 
 export interface AdSettingsData {
-    homePageAdCode?: string;
-    appDetailPageAdCode?: string;
+    homePageAdKey?: string;
+    appDetailPageAdKey?: string;
 }

@@ -4,45 +4,46 @@
 import React, { useEffect, useRef } from 'react';
 
 interface AdRendererProps {
-  adCode: string;
+  adKey: string;
+  width?: number;
+  height?: number;
+  format?: 'iframe';
 }
 
-export const AdRenderer: React.FC<AdRendererProps> = ({ adCode }) => {
+export const AdRenderer: React.FC<AdRendererProps> = ({ 
+    adKey, 
+    width = 300, 
+    height = 250, 
+    format = 'iframe' 
+}) => {
   const adContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (adContainerRef.current && adCode) {
+    if (adContainerRef.current && adKey) {
       // Clear any previous ad content
       adContainerRef.current.innerHTML = '';
 
-      const fragment = document.createDocumentFragment();
-      
-      // Create a temporary div to parse the adCode string
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = adCode;
+      const atOptionsScript = document.createElement('script');
+      atOptionsScript.type = 'text/javascript';
+      atOptionsScript.innerHTML = `
+        atOptions = {
+          'key' : '${adKey}',
+          'format' : '${format}',
+          'height' : ${height},
+          'width' : ${width},
+          'params' : {}
+        };
+      `;
 
-      // The main script is often inside a div or directly in the string
-      const scriptElement = tempDiv.querySelector('script');
+      const invokeScript = document.createElement('script');
+      invokeScript.type = 'text/javascript';
+      invokeScript.src = `//www.highperformanceformat.com/${adKey}/invoke.js`;
+      invokeScript.async = true;
 
-      if (scriptElement) {
-        const script = document.createElement('script');
-        // Copy attributes from the parsed script to the new one
-        for (let i = 0; i < scriptElement.attributes.length; i++) {
-          const attr = scriptElement.attributes[i];
-          script.setAttribute(attr.name, attr.value);
-        }
-        script.innerHTML = scriptElement.innerHTML; // Copy inline script content
-        fragment.appendChild(script);
-      } else {
-         // If no script tag is found, it might be a simpler ad tag.
-         // Fallback to the original method, just in case.
-         adContainerRef.current.innerHTML = adCode;
-         return;
-      }
-      
-      adContainerRef.current.appendChild(fragment);
+      adContainerRef.current.appendChild(atOptionsScript);
+      adContainerRef.current.appendChild(invokeScript);
     }
-  }, [adCode]);
+  }, [adKey, width, height, format]);
 
-  return <div ref={adContainerRef} className="w-full h-full flex justify-center items-center"></div>;
+  return <div ref={adContainerRef} style={{ width: `${width}px`, height: `${height}px` }} className="flex justify-center items-center"></div>;
 };

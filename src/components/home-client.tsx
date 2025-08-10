@@ -116,9 +116,9 @@ export function HomeClient({ apps }: HomeClientProps) {
 
   return (
     <>
-      {adSettings?.homePageAdCode && (
+      {adSettings?.homePageAdKey && (
         <div className="my-8 flex justify-center">
-            <AdRenderer adCode={adSettings.homePageAdCode} />
+            <AdRenderer adKey={adSettings.homePageAdKey} width={728} height={90} />
         </div>
       )}
       {apps.length === 0 ? (
