@@ -236,3 +236,5 @@ export function AppDetailClient({ initialApp, appId }: AppDetailClientProps) {
     </div>
   );
 }
+
+    

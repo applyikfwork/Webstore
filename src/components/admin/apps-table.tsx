@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -48,7 +49,14 @@ export function AppsTable({ onEdit }: AppsTableProps) {
     useEffect(() => {
         const q = query(collection(db, "apps"), orderBy("createdAt", "desc"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const appsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as App));
+            const appsData = querySnapshot.docs.map(doc => {
+                const data = doc.data();
+                return { 
+                    id: doc.id, 
+                    ...data,
+                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString()
+                } as App
+            });
             setApps(appsData);
             setLoading(false);
         }, (error) => {
@@ -141,7 +149,7 @@ export function AppsTable({ onEdit }: AppsTableProps) {
                                 <TableCell className="font-medium">{app.name}</TableCell>
                                 <TableCell className="hidden md:table-cell"><Badge variant="secondary" className="capitalize">{getAppType(app)}</Badge></TableCell>
                                 <TableCell className="hidden lg:table-cell text-muted-foreground">
-                                    {app.createdAt?.toDate().toLocaleDateString()}
+                                    {app.createdAt ? new Date(app.createdAt.toString()).toLocaleDateString() : 'N/A'}
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <DropdownMenu>
@@ -185,3 +193,5 @@ export function AppsTable({ onEdit }: AppsTableProps) {
         </AlertDialog>
     );
 }
+
+    

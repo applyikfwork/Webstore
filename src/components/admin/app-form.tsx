@@ -35,7 +35,12 @@ const AppFormSchema = z.object({
   featureHighlights: z.string().min(10, "Feature highlights must be at least 10 characters."),
   version: z.string().optional(),
   tags: z.string().optional(),
-  screenshots: z.string().optional(),
+  downloads: z.coerce.number().min(0).optional(),
+  screenshot1: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
+  screenshot2: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
+  screenshot3: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
+  screenshot4: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
+  screenshot5: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
 }).refine(data => {
     return data.websiteUrl || data.apkUrl;
 }, {
@@ -61,7 +66,12 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         defaultValues: initialData ? {
             ...initialData,
             tags: initialData.tags?.join(', '),
-            screenshots: initialData.screenshots?.join(', '),
+            downloads: initialData.downloads || 0,
+            screenshot1: initialData.screenshots?.[0] || '',
+            screenshot2: initialData.screenshots?.[1] || '',
+            screenshot3: initialData.screenshots?.[2] || '',
+            screenshot4: initialData.screenshots?.[3] || '',
+            screenshot5: initialData.screenshots?.[4] || '',
         } : {
             name: "",
             websiteUrl: "",
@@ -72,7 +82,12 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
             featureHighlights: "",
             version: "1.0.0",
             tags: "",
-            screenshots: "",
+            downloads: 0,
+            screenshot1: '',
+            screenshot2: '',
+            screenshot3: '',
+            screenshot4: '',
+            screenshot5: '',
         },
     });
 
@@ -101,7 +116,16 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         setIsSubmitting(true);
 
         try {
-            const appPayload: Omit<App, 'id' | 'createdAt'> & { createdAt?: any, downloads?: number } = {
+            const screenshots = [
+                data.screenshot1,
+                data.screenshot2,
+                data.screenshot3,
+                data.screenshot4,
+                data.screenshot5
+            ].filter((url): url is string => !!url);
+
+
+            const appPayload: Omit<App, 'id' | 'createdAt'> & { createdAt?: any } = {
                 name: data.name,
                 websiteUrl: data.websiteUrl || "",
                 apkUrl: data.apkUrl || "",
@@ -110,7 +134,8 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                 featureHighlights: data.featureHighlights,
                 version: data.version,
                 tags: data.tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
-                screenshots: data.screenshots?.split(',').map(url => url.trim()).filter(Boolean) || [],
+                downloads: data.downloads,
+                screenshots: screenshots,
             };
 
             if (initialData?.id) {
@@ -118,7 +143,6 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                 toast({ title: "Success", description: "App updated successfully." });
             } else {
                 appPayload.createdAt = serverTimestamp();
-                appPayload.downloads = 0;
                 await addDoc(collection(db, "apps"), appPayload);
                 toast({ title: "Success", description: "App added successfully." });
             }
@@ -141,6 +165,17 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
 
                  <FormField control={form.control} name="version" render={({ field }) => (
                     <FormItem><FormLabel>Version</FormLabel><FormControl><Input placeholder="1.0.0" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+
+                <FormField control={form.control} name="downloads" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Initial Downloads</FormLabel>
+                        <FormControl>
+                            <Input type="number" placeholder="0" {...field} />
+                        </FormControl>
+                        <FormDescription>Set a starting download count.</FormDescription>
+                        <FormMessage />
+                    </FormItem>
                 )} />
 
                 <FormField control={form.control} name="websiteUrl" render={({ field }) => (
@@ -168,9 +203,25 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                     <FormItem><FormLabel>Tags</FormLabel><FormControl><Input placeholder="e.g. browser, privacy, utility" {...field} /></FormControl><FormDescription>Comma-separated list of tags.</FormDescription><FormMessage /></FormItem>
                 )} />
 
-                 <FormField control={form.control} name="screenshots" render={({ field }) => (
-                    <FormItem><FormLabel>Screenshots</FormLabel><FormControl><Textarea placeholder="e.g. https://example.com/ss1.png, https://example.com/ss2.png" {...field} /></FormControl><FormDescription>Comma-separated list of screenshot URLs.</FormDescription><FormMessage /></FormItem>
-                )} />
+                <div className="space-y-2">
+                    <FormLabel>Screenshot URLs</FormLabel>
+                    <FormField control={form.control} name="screenshot1" render={({ field }) => (
+                        <FormItem><FormControl><Input placeholder="Screenshot URL 1" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                     <FormField control={form.control} name="screenshot2" render={({ field }) => (
+                        <FormItem><FormControl><Input placeholder="Screenshot URL 2" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                     <FormField control={form.control} name="screenshot3" render={({ field }) => (
+                        <FormItem><FormControl><Input placeholder="Screenshot URL 3" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                     <FormField control={form.control} name="screenshot4" render={({ field }) => (
+                        <FormItem><FormControl><Input placeholder="Screenshot URL 4" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                     <FormField control={form.control} name="screenshot5" render={({ field }) => (
+                        <FormItem><FormControl><Input placeholder="Screenshot URL 5" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                </div>
+
 
                 <div className="relative">
                     <FormField control={form.control} name="appDetails" render={({ field }) => (
@@ -201,3 +252,5 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         </Form>
     );
 }
+
+    
