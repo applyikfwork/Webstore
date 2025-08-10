@@ -1,12 +1,15 @@
 "use client";
 
-import type { App } from "@/lib/types";
+import type { App, AdSettingsData } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Badge } from "./ui/badge";
 import { Globe, Download, Eye } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 
 function AppCard({ app }: { app: App }) {
@@ -96,8 +99,27 @@ interface HomeClientProps {
 }
 
 export function HomeClient({ apps }: HomeClientProps) {
+  const [adSettings, setAdSettings] = useState<AdSettingsData | null>(null);
+
+  useEffect(() => {
+    const fetchAdSettings = async () => {
+        const docRef = doc(db, "settings", "ads");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            setAdSettings(docSnap.data() as AdSettingsData);
+        }
+    };
+    fetchAdSettings();
+  }, []);
+
   return (
     <>
+      {adSettings?.homePageAdCode && (
+        <div 
+            className="my-8 flex justify-center"
+            dangerouslySetInnerHTML={{ __html: adSettings.homePageAdCode }}
+        />
+      )}
       {apps.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-xl text-muted-foreground">No apps to display yet.</p>

@@ -20,3 +20,8 @@ export interface SiteSettingsData {
     iconUrl?: string;
     tagline?: string;
 }
+
+export interface AdSettingsData {
+    homePageAdCode?: string;
+    appDetailPageAdCode?: string;
+}

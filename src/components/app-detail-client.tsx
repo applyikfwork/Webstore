@@ -1,9 +1,9 @@
 
 "use client"
 
-import { doc, updateDoc, increment, onSnapshot } from "firebase/firestore";
+import { doc, updateDoc, increment, onSnapshot, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { App } from "@/lib/types";
+import type { App, AdSettingsData } from "@/lib/types";
 import { notFound, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -21,9 +21,21 @@ interface AppDetailClientProps {
 
 export function AppDetailClient({ initialApp, appId }: AppDetailClientProps) {
   const [app, setApp] = useState<App>(initialApp);
-  const [loading, setLoading] = useState(false); // Initial data is already loaded
+  const [adSettings, setAdSettings] = useState<AdSettingsData | null>(null);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchAdSettings = async () => {
+        const docRef = doc(db, "settings", "ads");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            setAdSettings(docSnap.data() as AdSettingsData);
+        }
+    };
+    fetchAdSettings();
+  }, []);
 
   useEffect(() => {
     const docRef = doc(db, "apps", appId);
@@ -59,7 +71,6 @@ export function AppDetailClient({ initialApp, appId }: AppDetailClientProps) {
         await updateDoc(docRef, {
             downloads: increment(1)
         });
-        // Use window.open for direct download link
         window.open(app.apkUrl, '_blank');
     } catch (error) {
         console.error("Error updating download count", error);
@@ -176,6 +187,13 @@ export function AppDetailClient({ initialApp, appId }: AppDetailClientProps) {
             </div>
         </div>
 
+        {adSettings?.appDetailPageAdCode && (
+            <div 
+                className="my-8 flex justify-center"
+                dangerouslySetInnerHTML={{ __html: adSettings.appDetailPageAdCode }}
+            />
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 mt-12">
             <div>
                 <Card>
@@ -236,5 +254,3 @@ export function AppDetailClient({ initialApp, appId }: AppDetailClientProps) {
     </div>
   );
 }
-
-    

@@ -6,6 +6,7 @@ import type { App } from "@/lib/types";
 import { AppsTable } from "@/components/admin/apps-table";
 import { AppForm } from "@/components/admin/app-form";
 import { SiteSettings } from "@/components/admin/site-settings";
+import { AdSettings } from "@/components/admin/ad-settings";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,6 +45,10 @@ export default function AdminPage() {
 
                 <div className="space-y-8">
                     <SiteSettings />
+
+                    <Separator />
+
+                    <AdSettings />
 
                     <Separator />
 
