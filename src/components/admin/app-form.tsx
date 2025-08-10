@@ -20,29 +20,23 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { addDoc, collection, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { supabase } from "@/lib/supabase";
 import type { App } from "@/lib/types";
-import { Wand2, Loader2, Upload } from "lucide-react";
+import { Wand2, Loader2 } from "lucide-react";
 import { generateAppDescription } from "@/ai/flows/generate-app-description";
-import { Progress } from "@/components/ui/progress";
 
 
 const AppFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   websiteUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
-  apkFile: z.any().optional(),
   apkUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
   iconUrl: z.string().url("Please enter a valid URL for the icon."),
   appDetails: z.string().min(10, "Details must be at least 10 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
   featureHighlights: z.string().min(10, "Feature highlights must be at least 10 characters."),
 }).refine(data => {
-    // If we have an existing app, the initial apkUrl might be there
-    if (data.apkUrl) return true;
-    // If we are creating a new one or editing, we need one of these
-    return data.websiteUrl || (data.apkFile && data.apkFile.length > 0);
+    return data.websiteUrl || data.apkUrl;
 }, {
-  message: "Either a Website URL or a new APK file is required.",
+  message: "Either a Website URL or an APK URL is required.",
   path: ["websiteUrl"],
 });
 
@@ -58,18 +52,15 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     
     const form = useForm<AppFormValues>({
         resolver: zodResolver(AppFormSchema),
         defaultValues: initialData ? {
             ...initialData,
-            apkFile: undefined,
         } : {
             name: "",
             websiteUrl: "",
             apkUrl: "",
-            apkFile: undefined,
             iconUrl: "",
             appDetails: "",
             description: "",
@@ -98,89 +89,14 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         }
     };
 
-    const uploadApk = async (file: File): Promise<string> => {
-        const filePath = `apks/${Date.now()}_${file.name}`;
-        
-        try {
-            const { error: uploadError } = await supabase.storage
-                .from('apks')
-                .upload(filePath, file, {
-                    cacheControl: '3600',
-                    upsert: false,
-                });
-
-            if (uploadError) {
-                if (uploadError.message.includes("Bucket not found")) {
-                     throw new Error("Supabase storage bucket 'apks' not found. Please create it in your Supabase dashboard.");
-                }
-                throw uploadError;
-            }
-
-            const { data } = supabase.storage
-                .from('apks')
-                .getPublicUrl(filePath);
-
-            if (!data.publicUrl) {
-                throw new Error("Could not get the file's public URL.");
-            }
-            
-            return data.publicUrl;
-        } catch (error) {
-             console.error("Upload failed:", error);
-             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during upload.";
-             throw new Error(`APK upload failed: ${errorMessage}`);
-        }
-    }
-
-
     async function onSubmit(data: AppFormValues) {
         setIsSubmitting(true);
-        setUploadProgress(null);
 
         try {
-            let finalApkUrl = initialData?.apkUrl || data.apkUrl;
-            const apkFile = data.apkFile?.[0];
-
-            if (apkFile) {
-                 if (apkFile.type !== 'application/vnd.android.package-archive') {
-                    toast({
-                        variant: "destructive",
-                        title: "Invalid File Type",
-                        description: "Please upload a valid .apk file.",
-                    });
-                    setIsSubmitting(false);
-                    return;
-                }
-                toast({ title: "Uploading APK...", description: "Please wait for the file to upload." });
-
-                // Set up a progress tracking mechanism
-                const uploadTask = supabase.storage
-                    .from('apks')
-                    .upload(apkFile.name, apkFile, {
-                        cacheControl: '3600',
-                        upsert: false
-                    });
-                
-                // This is a simplified progress simulation.
-                // Supabase JS v2 doesn't have a direct onUploadProgress callback on the top-level upload function.
-                // For a real app, you might need a more complex setup (e.g., resumable uploads).
-                let progress = 0;
-                const interval = setInterval(() => {
-                    progress = Math.min(progress + 10, 90);
-                    setUploadProgress(progress);
-                }, 500);
-
-                finalApkUrl = await uploadApk(apkFile);
-
-                clearInterval(interval);
-                setUploadProgress(100); 
-                toast({ title: "Upload Complete", description: "APK successfully uploaded." });
-            }
-
             const appPayload: Omit<App, 'id' | 'createdAt'> & { createdAt?: any } = {
                 name: data.name,
                 websiteUrl: data.websiteUrl || "",
-                apkUrl: finalApkUrl,
+                apkUrl: data.apkUrl || "",
                 iconUrl: data.iconUrl,
                 description: data.description,
                 featureHighlights: data.featureHighlights,
@@ -201,7 +117,6 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
             toast({ variant: "destructive", title: "Error", description: `Failed to save the app: ${errorMessage}` });
         } finally {
             setIsSubmitting(false);
-            setUploadProgress(null);
         }
     }
 
@@ -216,36 +131,18 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                     <FormItem><FormLabel>Website URL (Optional)</FormLabel><FormControl><Input placeholder="https://example.com" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 
-                <FormField
-                  control={form.control}
-                  name="apkFile"
-                  render={({ field: { value, onChange, ...fieldProps } }) => (
+                <FormField control={form.control} name="apkUrl" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>APK File (Optional)</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                            <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                            {...fieldProps}
-                            placeholder="Upload APK"
-                            type="file"
-                            accept=".apk,application/vnd.android.package-archive"
-                            onChange={(event) => onChange(event.target.files)}
-                            className="pl-9"
-                            />
-                        </div>
-                      </FormControl>
-                      <FormDescription>
-                        {initialData?.apkUrl ? "Uploading a new file will replace the existing one." : "Upload the .apk file for your app."}
+                        <FormLabel>APK URL (Optional)</FormLabel>
+                        <FormControl>
+                            <Input placeholder="https://your-supabase-url.co/path/to/your.apk" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                            Manually upload your APK to Supabase and paste the public URL here.
                       </FormDescription>
-                      <FormMessage />
+                        <FormMessage />
                     </FormItem>
-                  )}
-                />
-                
-                {uploadProgress !== null && (
-                    <Progress value={uploadProgress} className="w-full" />
-                )}
+                )} />
 
                 <FormField control={form.control} name="iconUrl" render={({ field }) => (
                     <FormItem><FormLabel>App Icon URL</FormLabel><FormControl><Input placeholder="https://example.com/icon.png" {...field} /></FormControl><FormMessage /></FormItem>
