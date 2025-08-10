@@ -93,7 +93,7 @@ export function AdSettings() {
                                 <FormControl>
                                     <Input placeholder="e.g., e25102b7dcf781e429599a169bfcf76e" {...field} className="font-mono text-xs" />
                                 </FormControl>
-                                <FormDescription>This ad will be displayed on the main app listing page.</FormDescription>
+                                <FormDescription>This ad will be displayed on the main app listing page. Recommended size: 728x90.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -104,7 +104,7 @@ export function AdSettings() {
                                 <FormControl>
                                     <Input placeholder="e.g., e25102b7dcf781e429599a169bfcf76e" {...field} className="font-mono text-xs" />
                                 </FormControl>
-                                <FormDescription>This ad will be displayed on each individual app's page.</FormDescription>
+                                <FormDescription>This ad will be displayed on each individual app's page. Recommended size: 300x250.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )} />

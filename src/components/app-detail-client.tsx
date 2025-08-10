@@ -188,13 +188,7 @@ export function AppDetailClient({ initialApp, appId }: AppDetailClientProps) {
             </div>
         </div>
 
-        {adSettings?.appDetailPageAdKey && (
-            <div className="my-8 flex justify-center">
-                <AdRenderer adKey={adSettings.appDetailPageAdKey} />
-            </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 mt-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12 mt-12">
             <div>
                 <Card>
                     <CardContent className="pt-6">
@@ -249,6 +243,12 @@ export function AppDetailClient({ initialApp, appId }: AppDetailClientProps) {
                         </div>
                     </CardContent>
                  </Card>
+
+                {adSettings?.appDetailPageAdKey && (
+                    <div className="flex justify-center">
+                        <AdRenderer adKey={adSettings.appDetailPageAdKey} width={300} height={250} />
+                    </div>
+                )}
             </div>
         </div>
     </div>
