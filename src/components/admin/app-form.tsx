@@ -36,9 +36,9 @@ const AppFormSchema = z.object({
   appDetails: z.string().min(10, "Details must be at least 10 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
   featureHighlights: z.string().min(10, "Feature highlights must be at least 10 characters."),
-}).refine(data => data.websiteUrl || data.apkUrl || data.apkFile, {
-  message: "At least one URL (Website or APK) or an APK file is required.",
-  path: ["websiteUrl"],
+}).refine(data => data.websiteUrl || data.apkUrl || (data.apkFile && data.apkFile.length > 0), {
+  message: "Either a Website URL, an existing APK URL, or a new APK file is required.",
+  path: ["websiteUrl"], // You can adjust the path to where the error message should appear.
 });
 
 
