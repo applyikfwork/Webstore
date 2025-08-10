@@ -101,33 +101,35 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
     const uploadApk = async (file: File): Promise<string> => {
         const filePath = `apks/${Date.now()}_${file.name}`;
         
-        const { error: uploadError } = await supabase.storage
-            .from('apks')
-            .upload(filePath, file, {
-                cacheControl: '3600',
-                upsert: false,
-                // @ts-ignore
-                onUploadProgress: (progress) => {
-                    if (progress.total) {
-                        setUploadProgress((progress.loaded / progress.total) * 100);
-                    }
+        try {
+            const { error: uploadError } = await supabase.storage
+                .from('apks')
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false,
+                });
+
+            if (uploadError) {
+                if (uploadError.message.includes("Bucket not found")) {
+                     throw new Error("Supabase storage bucket 'apks' not found. Please create it in your Supabase dashboard.");
                 }
-            });
+                throw uploadError;
+            }
 
-        if (uploadError) {
-            console.error("Upload failed:", uploadError);
-            throw new Error(`APK upload failed: ${uploadError.message}`);
+            const { data } = supabase.storage
+                .from('apks')
+                .getPublicUrl(filePath);
+
+            if (!data.publicUrl) {
+                throw new Error("Could not get the file's public URL.");
+            }
+            
+            return data.publicUrl;
+        } catch (error) {
+             console.error("Upload failed:", error);
+             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during upload.";
+             throw new Error(`APK upload failed: ${errorMessage}`);
         }
-
-        const { data } = supabase.storage
-            .from('apks')
-            .getPublicUrl(filePath);
-
-        if (!data.publicUrl) {
-            throw new Error("Could not get the file's public URL.");
-        }
-        
-        return data.publicUrl;
     }
 
 
@@ -150,7 +152,27 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                     return;
                 }
                 toast({ title: "Uploading APK...", description: "Please wait for the file to upload." });
+
+                // Set up a progress tracking mechanism
+                const uploadTask = supabase.storage
+                    .from('apks')
+                    .upload(apkFile.name, apkFile, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+                
+                // This is a simplified progress simulation.
+                // Supabase JS v2 doesn't have a direct onUploadProgress callback on the top-level upload function.
+                // For a real app, you might need a more complex setup (e.g., resumable uploads).
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress = Math.min(progress + 10, 90);
+                    setUploadProgress(progress);
+                }, 500);
+
                 finalApkUrl = await uploadApk(apkFile);
+
+                clearInterval(interval);
                 setUploadProgress(100); 
                 toast({ title: "Upload Complete", description: "APK successfully uploaded." });
             }
