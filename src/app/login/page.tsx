@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -47,7 +48,7 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (!loading && user?.email === 'xyzapplywork@gmail.com') {
+    if (!loading && user) {
       router.push('/admin');
     }
   }, [user, loading, router]);
