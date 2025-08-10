@@ -53,6 +53,23 @@ export function SiteSettings() {
         fetchSettings();
     }, []);
 
+    const handleFileUpload = async (file: File, resourceType: 'image' | 'raw' | 'video' | 'auto') => {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const result = await uploadToCloudinary(formData, resourceType);
+            return result.secure_url;
+        } catch (error: any) {
+            console.error("Upload error:", error.message);
+            toast({
+                variant: 'destructive',
+                title: 'Upload Failed',
+                description: error.message || 'An unknown error occurred during file upload.'
+            });
+            return null;
+        }
+    };
+
     async function onSubmit(data: SiteSettingsFormValues) {
         setIsSubmitting(true);
         try {
@@ -63,10 +80,12 @@ export function SiteSettings() {
             }
             
             const iconFile = data.icon[0];
-            const formData = new FormData();
-            formData.append('file', iconFile);
-            const result = await uploadToCloudinary(formData, 'image');
-            const iconUrl = result.secure_url;
+            const iconUrl = await handleFileUpload(iconFile, 'image');
+
+            if (!iconUrl) {
+                setIsSubmitting(false);
+                return;
+            }
 
             await setDoc(doc(db, "settings", "site"), { iconUrl });
 
@@ -131,5 +150,3 @@ export function SiteSettings() {
         </Card>
     );
 }
-
-    

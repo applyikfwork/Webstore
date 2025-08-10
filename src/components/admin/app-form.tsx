@@ -86,6 +86,23 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         }
     };
 
+    const handleFileUpload = async (file: File, resourceType: 'image' | 'raw' | 'video' | 'auto') => {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const result = await uploadToCloudinary(formData, resourceType);
+            return result.secure_url;
+        } catch (error: any) {
+            console.error("Upload error:", error.message);
+            toast({
+                variant: 'destructive',
+                title: 'Upload Failed',
+                description: error.message || 'An unknown error occurred during file upload.'
+            });
+            return null;
+        }
+    };
+
     async function onSubmit(data: AppFormValues) {
         setIsSubmitting(true);
         try {
@@ -102,20 +119,20 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
 
             let iconUrl = initialData?.iconUrl;
             if (data.icon && data.icon[0]) {
-                const iconFile = data.icon[0];
-                const formData = new FormData();
-                formData.append('file', iconFile);
-                const result = await uploadToCloudinary(formData, 'auto');
-                iconUrl = result.secure_url;
+                iconUrl = await handleFileUpload(data.icon[0], 'auto');
+                if (!iconUrl) {
+                    setIsSubmitting(false);
+                    return;
+                }
             }
 
             let apkUrl = initialData?.apkUrl;
             if (data.type === 'apk' && data.apk && data.apk[0]) {
-                 const apkFile = data.apk[0];
-                const formData = new FormData();
-                formData.append('file', apkFile);
-                const result = await uploadToCloudinary(formData, 'raw');
-                apkUrl = result.secure_url;
+                 apkUrl = await handleFileUpload(data.apk[0], 'raw');
+                 if (!apkUrl) {
+                    setIsSubmitting(false);
+                    return;
+                }
             }
 
 
@@ -207,5 +224,3 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         </Form>
     );
 }
-
-    

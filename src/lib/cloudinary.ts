@@ -6,11 +6,18 @@ export async function uploadToCloudinary(
   formData: FormData,
   resource_type: 'image' | 'raw' | 'video' | 'auto'
 ) {
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+  if (!cloudName || !apiKey || !apiSecret) {
+    throw new Error('Cloudinary credentials are not configured. Please check your .env file.');
+  }
   
   cloudinary.config({
-    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
   });
 
   const file = formData.get('file') as File;
@@ -30,7 +37,8 @@ export async function uploadToCloudinary(
         },
         function (error, result) {
           if (error) {
-            reject(error);
+            console.error('Cloudinary upload error:', error);
+            reject(new Error('Failed to upload file to Cloudinary.'));
             return;
           }
           resolve(result);
@@ -41,5 +49,3 @@ export async function uploadToCloudinary(
 
   return results as { secure_url: string };
 }
-
-    
