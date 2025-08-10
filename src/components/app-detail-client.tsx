@@ -154,6 +154,7 @@ export function AppDetailClient({ initialApp, appId }: AppDetailClientProps) {
                 width={192}
                 height={192}
                 className="rounded-3xl border-4 border-card object-cover aspect-square shadow-lg w-32 h-32 md:w-48 md:h-48"
+                data-ai-hint="app icon"
             />
             <div className="flex-1 space-y-3">
                 <h1 className="text-4xl md:text-5xl font-bold font-headline">{app.name}</h1>
@@ -207,7 +208,7 @@ export function AppDetailClient({ initialApp, appId }: AppDetailClientProps) {
                                 <a href={url} target="_blank" rel="noopener noreferrer" key={index}>
                                     <Image
                                         src={url}
-                                        alt={`Screenshot ${index + 1}`}
+                                        alt={`Screenshot ${index + 1} for ${app.name}`}
                                         width={1280}
                                         height={720}
                                         className="rounded-xl border object-cover aspect-video hover:opacity-90 transition-opacity"
@@ -222,7 +223,7 @@ export function AppDetailClient({ initialApp, appId }: AppDetailClientProps) {
              <div className="space-y-6">
                  <Card>
                     <CardContent className="pt-6">
-                        <h3 className="font-semibold mb-4">App Details</h3>
+                        <h3 className="font-semibold mb-4 text-xl">App Details</h3>
                         <div className="space-y-3 text-sm text-muted-foreground">
                              <div className="flex justify-between">
                                 <span className="font-medium text-card-foreground">Version</span>
@@ -245,7 +246,7 @@ export function AppDetailClient({ initialApp, appId }: AppDetailClientProps) {
                  </Card>
 
                 {adSettings?.appDetailPageAdKey && (
-                    <div className="flex justify-center">
+                    <div className="flex justify-center pt-4">
                         <AdRenderer adKey={adSettings.appDetailPageAdKey} width={300} height={250} />
                     </div>
                 )}
