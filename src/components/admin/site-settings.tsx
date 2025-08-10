@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,14 +19,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { uploadToCloudinary } from "@/lib/cloudinary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import Image from "next/image";
 
 
 const SiteSettingsSchema = z.object({
-  icon: z.any().optional(),
+  iconUrl: z.string().url("Please enter a valid URL."),
 });
 
 type SiteSettingsFormValues = z.infer<typeof SiteSettingsSchema>;
@@ -38,6 +38,9 @@ export function SiteSettings() {
 
     const form = useForm<SiteSettingsFormValues>({
         resolver: zodResolver(SiteSettingsSchema),
+        defaultValues: {
+            iconUrl: "",
+        }
     });
 
     useEffect(() => {
@@ -46,53 +49,22 @@ export function SiteSettings() {
             const docRef = doc(db, "settings", "site");
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
-                setCurrentIconUrl(docSnap.data().iconUrl);
+                const url = docSnap.data().iconUrl;
+                setCurrentIconUrl(url);
+                form.setValue("iconUrl", url);
             }
             setLoading(false);
         };
         fetchSettings();
-    }, []);
+    }, [form]);
 
-    const handleFileUpload = async (file: File, resourceType: 'image' | 'raw' | 'video' | 'auto') => {
-        try {
-            const formData = new FormData();
-            formData.append('file', file);
-            const result = await uploadToCloudinary(formData, resourceType);
-            return result.secure_url;
-        } catch (error: any) {
-            console.error("Upload error:", error.message);
-            toast({
-                variant: 'destructive',
-                title: 'Upload Failed',
-                description: error.message || 'An unknown error occurred during file upload.'
-            });
-            return null;
-        }
-    };
 
     async function onSubmit(data: SiteSettingsFormValues) {
         setIsSubmitting(true);
         try {
-            if (!data.icon || data.icon.length === 0) {
-                toast({ variant: 'destructive', title: 'Error', description: 'Please select an icon to upload.' });
-                setIsSubmitting(false);
-                return;
-            }
-            
-            const iconFile = data.icon[0];
-            const iconUrl = await handleFileUpload(iconFile, 'image');
-
-            if (!iconUrl) {
-                setIsSubmitting(false);
-                return;
-            }
-
-            await setDoc(doc(db, "settings", "site"), { iconUrl });
-
-            setCurrentIconUrl(iconUrl);
+            await setDoc(doc(db, "settings", "site"), { iconUrl: data.iconUrl });
+            setCurrentIconUrl(data.iconUrl);
             toast({ title: "Success", description: "Site icon updated successfully." });
-            form.reset();
-
         } catch (error) {
             console.error("Form submission error", error);
             toast({ variant: "destructive", title: "Error", description: "Failed to update site icon." });
@@ -100,8 +72,6 @@ export function SiteSettings() {
             setIsSubmitting(false);
         }
     }
-    
-    const iconFileRef = form.register("icon");
 
     return (
         <Card>
@@ -121,13 +91,13 @@ export function SiteSettings() {
                                 </div>
                             )}
                             <div className="flex-1">
-                                <FormField control={form.control} name="icon" render={() => (
+                                <FormField control={form.control} name="iconUrl" render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>New Site Icon</FormLabel>
+                                        <FormLabel>Site Icon URL</FormLabel>
                                         <FormControl>
-                                            <Input type="file" accept="image/png, image/jpeg, image/svg+xml, image/x-icon" {...iconFileRef} />
+                                            <Input placeholder="https://example.com/icon.png" {...field} />
                                         </FormControl>
-                                        <FormDescription>Upload a new icon (e.g., .png, .jpg, .ico). This will replace the current site icon.</FormDescription>
+                                        <FormDescription>Paste the URL of your site icon. This will replace the current icon.</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )} />
@@ -139,9 +109,9 @@ export function SiteSettings() {
                                 {isSubmitting ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
-                                    <Upload className="mr-2 h-4 w-4" />
+                                    <Save className="mr-2 h-4 w-4" />
                                 )}
-                                Upload & Save
+                                Save Icon
                             </Button>
                         </div>
                     </form>

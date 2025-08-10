@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,21 +24,23 @@ import { db } from "@/lib/firebase";
 import type { App } from "@/lib/types";
 import { Wand2, Loader2 } from "lucide-react";
 import { generateAppDescription } from "@/ai/flows/generate-app-description";
-import { uploadToCloudinary } from "@/lib/cloudinary";
 
 
 const AppFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   type: z.enum(["website", "apk"], { required_error: "You need to select an app type." }),
   websiteUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
+  apkUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
+  iconUrl: z.string().url("Please enter a valid URL for the icon."),
   appDetails: z.string().min(10, "Details must be at least 10 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
   featureHighlights: z.string().min(10, "Feature highlights must be at least 10 characters."),
-  icon: z.any().optional(),
-  apk: z.any().optional(),
 }).refine(data => data.type === 'website' ? (data.websiteUrl && data.websiteUrl.length > 0) : true, {
   message: "Website URL is required.",
   path: ["websiteUrl"],
+}).refine(data => data.type === 'apk' ? (data.apkUrl && data.apkUrl.length > 0) : true, {
+    message: "APK URL is required.",
+    path: ["apkUrl"],
 });
 
 
@@ -55,10 +58,12 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
     
     const form = useForm<AppFormValues>({
         resolver: zodResolver(AppFormSchema),
-        defaultValues: initialData ? { ...initialData, icon: undefined, apk: undefined } : {
+        defaultValues: initialData || {
             name: "",
             type: "website",
             websiteUrl: "",
+            apkUrl: "",
+            iconUrl: "",
             appDetails: "",
             description: "",
             featureHighlights: "",
@@ -86,62 +91,15 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         }
     };
 
-    const handleFileUpload = async (file: File, resourceType: 'image' | 'raw' | 'video' | 'auto') => {
-        try {
-            const formData = new FormData();
-            formData.append('file', file);
-            const result = await uploadToCloudinary(formData, resourceType);
-            return result.secure_url;
-        } catch (error: any) {
-            console.error("Upload error:", error.message);
-            toast({
-                variant: 'destructive',
-                title: 'Upload Failed',
-                description: error.message || 'An unknown error occurred during file upload.'
-            });
-            return null;
-        }
-    };
-
     async function onSubmit(data: AppFormValues) {
         setIsSubmitting(true);
         try {
-            if (!initialData && (!data.icon || data.icon.length === 0)) {
-                toast({ variant: 'destructive', title: 'Error', description: 'App Icon is required.' });
-                setIsSubmitting(false);
-                return;
-            }
-            if (data.type === 'apk' && !initialData?.apkUrl && (!data.apk || data.apk.length === 0)) {
-                toast({ variant: 'destructive', title: 'Error', description: 'APK file is required for new APK app type.' });
-                setIsSubmitting(false);
-                return;
-            }
-
-            let iconUrl = initialData?.iconUrl;
-            if (data.icon && data.icon[0]) {
-                iconUrl = await handleFileUpload(data.icon[0], 'auto');
-                if (!iconUrl) {
-                    setIsSubmitting(false);
-                    return;
-                }
-            }
-
-            let apkUrl = initialData?.apkUrl;
-            if (data.type === 'apk' && data.apk && data.apk[0]) {
-                 apkUrl = await handleFileUpload(data.apk[0], 'raw');
-                 if (!apkUrl) {
-                    setIsSubmitting(false);
-                    return;
-                }
-            }
-
-
             const appPayload: Omit<App, 'id' | 'createdAt'> & { createdAt?: any } = {
                 name: data.name,
                 type: data.type,
                 websiteUrl: data.type === 'website' ? data.websiteUrl : '',
-                apkUrl: data.type === 'apk' ? apkUrl : '',
-                iconUrl: iconUrl!,
+                apkUrl: data.type === 'apk' ? data.apkUrl : '',
+                iconUrl: data.iconUrl,
                 description: data.description,
                 featureHighlights: data.featureHighlights,
             };
@@ -164,8 +122,6 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
     }
 
     const appType = form.watch("type");
-    const iconFileRef = form.register("icon");
-    const apkFileRef = form.register("apk");
 
     return (
         <Form {...form}>
@@ -187,12 +143,12 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                     <FormItem><FormLabel>Website URL</FormLabel><FormControl><Input placeholder="https://example.com" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />}
                 
-                {appType === 'apk' && <FormField control={form.control} name="apk" render={() => (
-                    <FormItem><FormLabel>APK File</FormLabel><FormControl><Input type="file" accept=".apk" {...apkFileRef} /></FormControl><FormDescription>{initialData?.apkUrl ? "Leave blank to keep existing file." : ""}</FormDescription><FormMessage /></FormItem>
+                {appType === 'apk' && <FormField control={form.control} name="apkUrl" render={({ field }) => (
+                    <FormItem><FormLabel>APK URL</FormLabel><FormControl><Input placeholder="https://example.com/app.apk" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />}
 
-                <FormField control={form.control} name="icon" render={() => (
-                    <FormItem><FormLabel>App Icon</FormLabel><FormControl><Input type="file" accept="image/png, image/jpeg" {...iconFileRef} /></FormControl><FormDescription>{initialData?.iconUrl ? "Leave blank to keep existing icon." : ""}</FormDescription><FormMessage /></FormItem>
+                <FormField control={form.control} name="iconUrl" render={({ field }) => (
+                    <FormItem><FormLabel>App Icon URL</FormLabel><FormControl><Input placeholder="https://example.com/icon.png" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
 
                 <div className="relative">
