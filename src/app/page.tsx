@@ -1,22 +1,27 @@
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { App } from "@/lib/types";
-import { AppCard } from "@/components/app-card";
+import { HomeClient } from "@/components/home-client";
 
-export const revalidate = 0;
+export const dynamic = "force-dynamic";
+
+async function getApps(): Promise<App[]> {
+    const appsCollectionRef = collection(db, "apps");
+    const q = query(appsCollectionRef, orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q);
+    const apps = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt.toDate().toISOString(),
+        } as App;
+    });
+    return apps;
+}
 
 export default async function Home() {
-  const appsCollectionRef = collection(db, "apps");
-  const q = query(appsCollectionRef, orderBy("createdAt", "desc"));
-  const querySnapshot = await getDocs(q);
-  const apps = querySnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt.toDate().toISOString(),
-      } as App;
-  });
+  const apps = await getApps();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -26,18 +31,8 @@ export default async function Home() {
           <p className="text-lg text-muted-foreground mt-2">Discover the latest apps and websites.</p>
         </div>
         
-        {apps.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-xl text-muted-foreground">No apps to display yet.</p>
-            <p className="text-muted-foreground">The admin can add some from the admin panel.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {apps.map((app) => (
-              <AppCard key={app.id} app={app} />
-            ))}
-          </div>
-        )}
+        <HomeClient apps={apps} />
+
       </main>
     </div>
   );
