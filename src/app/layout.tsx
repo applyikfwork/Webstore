@@ -7,22 +7,12 @@ import { doc, getDoc } from 'firebase/firestore';
 import { Header } from '@/components/header';
 
 export async function generateMetadata(): Promise<Metadata> {
-    let iconUrl = '/favicon.ico';
-    try {
-        const docRef = doc(db, "settings", "site");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().iconUrl) {
-            iconUrl = docSnap.data().iconUrl;
-        }
-    } catch (error) {
-        console.error("Could not fetch site settings", error);
-    }
-    
+    // Simplified to prevent build errors. The dynamic icon is still fetched for the header.
     return {
         title: 'App Showcase Central',
         description: 'A platform for showcasing APKs and websites.',
         icons: {
-            icon: iconUrl,
+            icon: '/favicon.ico',
         }
     };
 }
