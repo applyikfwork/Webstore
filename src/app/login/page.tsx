@@ -133,7 +133,7 @@ export default function LoginPage() {
                     className="mx-auto rounded-2xl border-4 shadow-md"
                 />
             )}
-          <CardTitle className="text-2xl font-headline">Admin Login</CardTitle>
+          <CardTitle className="text-2xl font-headline">Login</CardTitle>
           <CardDescription>
             Sign in to manage the App Showcase
           </CardDescription>

@@ -2,8 +2,14 @@ import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { App } from "@/lib/types";
 import { HomeClient } from "@/components/home-client";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+    title: 'App Showcase Central - Discover and Download Apps',
+    description: 'The ultimate platform for developers to showcase their latest APKs and web applications. Discover, download, and get details on a wide variety of apps.',
+};
 
 async function getApps(): Promise<App[]> {
     const appsCollectionRef = collection(db, "apps");

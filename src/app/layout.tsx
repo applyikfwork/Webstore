@@ -5,8 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/header';
 
 export const metadata: Metadata = {
-    title: 'App Showcase Central',
-    description: 'A platform for showcasing APKs and websites.',
+    title: 'App Showcase Central - Discover and Download Apps',
+    description: 'The ultimate platform for developers to showcase their latest APKs and web applications. Discover, download, and get details on a wide variety of apps.',
     icons: {
         icon: '/favicon.ico',
     }

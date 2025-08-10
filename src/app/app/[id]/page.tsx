@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: { params: { id: string }}) {
     }
 
     return {
-        title: `${app.name} | App Showcase`,
+        title: `${app.name} | App Showcase Central`,
         description: app.description,
     }
 }
