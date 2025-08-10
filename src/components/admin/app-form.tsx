@@ -19,11 +19,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { addDoc, collection, doc, serverTimestamp, updateDoc } from "firebase/firestore";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import type { App } from "@/lib/types";
 import { Wand2, Loader2, Upload } from "lucide-react";
 import { generateAppDescription } from "@/ai/flows/generate-app-description";
-import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { Progress } from "@/components/ui/progress";
 
 
@@ -98,32 +98,38 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         }
     };
 
-    const uploadApk = (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const storageRef = ref(storage, `apks/${Date.now()}_${file.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
+    const uploadApk = async (file: File): Promise<string> => {
+        const filePath = `apks/${Date.now()}_${file.name}`;
+        
+        const { error: uploadError } = await supabase.storage
+            .from('apks')
+            .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false,
+                // @ts-ignore
+                onUploadProgress: (progress) => {
+                    if (progress.total) {
+                        setUploadProgress((progress.loaded / progress.total) * 100);
+                    }
+                }
+            });
 
-        uploadTask.on('state_changed',
-          (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            setUploadProgress(progress);
-          },
-          (error) => {
-            console.error("Upload failed:", error);
-            reject(new Error(`APK upload failed: ${error.message}`));
-          },
-          async () => {
-            try {
-                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                resolve(downloadURL);
-            } catch (error) {
-                console.error("Failed to get download URL:", error);
-                reject(new Error("Could not get the file's download URL."));
-            }
-          }
-        );
-      });
+        if (uploadError) {
+            console.error("Upload failed:", uploadError);
+            throw new Error(`APK upload failed: ${uploadError.message}`);
+        }
+
+        const { data } = supabase.storage
+            .from('apks')
+            .getPublicUrl(filePath);
+
+        if (!data.publicUrl) {
+            throw new Error("Could not get the file's public URL.");
+        }
+        
+        return data.publicUrl;
     }
+
 
     async function onSubmit(data: AppFormValues) {
         setIsSubmitting(true);
