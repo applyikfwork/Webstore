@@ -26,39 +26,32 @@ function AppCard({ app }: { app: App }) {
     }
 
     return (
-        <Card className="flex flex-col w-full overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1 bg-card border">
-            <CardHeader className="flex-row items-start gap-4 p-4">
-                <Image
+        <Card className="flex flex-col w-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02] bg-card border group">
+            <CardHeader className="flex-row items-center gap-4 p-4">
+                 <Image
                     src={app.iconUrl}
                     alt={`${app.name} icon`}
                     width={64}
                     height={64}
-                    className="rounded-lg border object-cover h-16 w-16"
+                    className="rounded-full border-2 object-cover h-16 w-16"
                     data-ai-hint="app icon"
                 />
                 <div className="flex-1">
-                    <CardTitle className="text-xl font-headline">{app.name}</CardTitle>
-                    <Badge variant="secondary" className="mt-1 capitalize">
+                    <CardTitle className="text-xl font-headline group-hover:text-primary transition-colors">{app.name}</CardTitle>
+                    <Badge variant="outline" className="mt-1 capitalize">
                         {getBadgeLabel()}
                     </Badge>
                 </div>
             </CardHeader>
-            <CardContent className="flex-1 px-4 pb-4 text-sm space-y-4">
-                <div>
-                  <h4 className="font-semibold mb-1 text-card-foreground">Description</h4>
-                  <p className="text-muted-foreground line-clamp-3">{app.description}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-1 text-card-foreground">Features</h4>
-                  <p className="text-muted-foreground line-clamp-2">{app.featureHighlights}</p>
-                </div>
+            <CardContent className="flex-1 px-4 pb-4 text-sm">
+                <p className="text-muted-foreground line-clamp-3">{app.description}</p>
             </CardContent>
-            <CardFooter className="bg-muted/50 p-4 mt-auto border-t">
+            <CardFooter className="bg-muted/30 p-4 mt-auto border-t">
                <div className="w-full flex flex-col sm:flex-row gap-2">
                  <Link href={`/app/${app.id}`} className="flex-1">
                     <Button className="w-full" variant="outline">
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
+                        <Eye />
+                        View
                     </Button>
                  </Link>
                  <div className="flex-1 flex gap-2">
@@ -70,7 +63,7 @@ function AppCard({ app }: { app: App }) {
                             className="flex-1"
                         >
                             <Button className="w-full" variant="outline">
-                                <Globe className="mr-2 h-4 w-4" />
+                                <Globe />
                                 Website
                             </Button>
                         </a>
@@ -83,7 +76,7 @@ function AppCard({ app }: { app: App }) {
                             className="flex-1"
                         >
                             <Button className="w-full">
-                                <Download className="mr-2 h-4 w-4" />
+                                <Download />
                                 APK
                             </Button>
                         </a>
@@ -117,7 +110,7 @@ export function HomeClient({ apps }: HomeClientProps) {
   return (
     <>
       {adSettings?.homePageAdKey && (
-        <div className="my-8 flex justify-center">
+        <div className="my-12 flex justify-center p-6 bg-card border rounded-lg shadow-sm">
             <AdRenderer adKey={adSettings.homePageAdKey} width={728} height={90} />
         </div>
       )}
