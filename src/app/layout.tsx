@@ -2,30 +2,30 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/providers/auth-provider';
 import { Toaster } from '@/components/ui/toaster';
-import { cn } from '@/lib/utils';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Header } from '@/components/header';
 
-let iconUrl = '/favicon.ico';
-try {
-  const docRef = doc(db, "settings", "site");
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists() && docSnap.data().iconUrl) {
-    iconUrl = docSnap.data().iconUrl;
-  }
-} catch (error) {
-  // Gracefully fallback to default icon
-  console.error("Could not fetch site icon for metadata", error);
+export async function generateMetadata(): Promise<Metadata> {
+    let iconUrl = '/favicon.ico';
+    try {
+        const docRef = doc(db, "settings", "site");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().iconUrl) {
+            iconUrl = docSnap.data().iconUrl;
+        }
+    } catch (error) {
+        console.error("Could not fetch site settings", error);
+    }
+    
+    return {
+        title: 'App Showcase Central',
+        description: 'A platform for showcasing APKs and websites.',
+        icons: {
+            icon: iconUrl,
+        }
+    };
 }
-
-export const metadata: Metadata = {
-  title: 'App Showcase Central',
-  description: 'A platform for showcasing APKs and websites.',
-  icons: {
-    icon: iconUrl,
-  }
-};
 
 
 export default async function RootLayout({
@@ -33,16 +33,16 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  let fetchedIconUrl = '/favicon.ico';
-    try {
-        const docRef = doc(db, "settings", "site");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().iconUrl) {
-            fetchedIconUrl = docSnap.data().iconUrl;
-        }
-    } catch (error) {
-        console.error("Could not fetch site icon for layout", error);
+  let iconUrl = null;
+  try {
+    const docRef = doc(db, "settings", "site");
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists() && docSnap.data().iconUrl) {
+        iconUrl = docSnap.data().iconUrl;
     }
+  } catch (error) {
+    console.error("Could not fetch site settings", error);
+  }
     
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
@@ -53,7 +53,7 @@ export default async function RootLayout({
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
-          <Header iconUrl={fetchedIconUrl} />
+          <Header iconUrl={iconUrl} />
           <main>{children}</main>
         </AuthProvider>
         <Toaster />
