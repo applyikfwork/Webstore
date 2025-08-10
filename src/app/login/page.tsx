@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
 import { useAuth } from "@/hooks/use-auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogIn, Mail, KeyRound, Loader2 } from "lucide-react";
@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { doc, getDoc } from "firebase/firestore";
+import Image from "next/image";
 
 const FormSchema = z.object({
   email: z.string().email({
@@ -38,6 +40,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [siteIconUrl, setSiteIconUrl] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -47,6 +50,21 @@ export default function LoginPage() {
     },
   });
 
+   useEffect(() => {
+    async function fetchIcon() {
+        try {
+            const docRef = doc(db, "settings", "site");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists() && docSnap.data().iconUrl) {
+                setSiteIconUrl(docSnap.data().iconUrl);
+            }
+        } catch (error) {
+            console.error("Could not fetch site icon for login page", error);
+        }
+    }
+    fetchIcon();
+  }, []);
+
   useEffect(() => {
     if (!loading && user) {
       router.push('/admin');
@@ -54,16 +72,7 @@ export default function LoginPage() {
   }, [user, loading, router]);
 
   const handleAuthSuccess = (loggedInUser: any) => {
-     if (loggedInUser.email !== 'xyzapplywork@gmail.com') {
-        auth.signOut();
-        toast({
-            variant: "destructive",
-            title: "Access Denied",
-            description: "This panel is for administrators only.",
-        });
-      } else {
-        router.push('/admin');
-      }
+    router.push('/admin');
   }
 
   const handleAuthError = (error: any) => {
@@ -106,15 +115,24 @@ export default function LoginPage() {
   if (loading || user) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-accent" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex min-h-screen items-center justify-center bg-secondary/40 p-4">
       <Card className="w-full max-w-sm shadow-2xl">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center space-y-4">
+            {siteIconUrl && (
+                <Image 
+                    src={siteIconUrl}
+                    alt="Site Icon"
+                    width={80}
+                    height={80}
+                    className="mx-auto rounded-2xl border-4 shadow-md"
+                />
+            )}
           <CardTitle className="text-2xl font-headline">Admin Login</CardTitle>
           <CardDescription>
             Sign in to manage the App Showcase

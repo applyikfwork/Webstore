@@ -21,7 +21,7 @@ export function AppCard({ app }: { app: App }) {
     }
 
     return (
-        <Card className="flex flex-col w-full overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-accent/20 hover:-translate-y-1 bg-card">
+        <Card className="flex flex-col w-full overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1 bg-card">
             <CardHeader className="flex-row items-start gap-4 p-4">
                 <Image
                     src={app.iconUrl}
@@ -48,7 +48,7 @@ export function AppCard({ app }: { app: App }) {
                   <p className="text-muted-foreground line-clamp-2">{app.featureHighlights}</p>
                 </div>
             </CardContent>
-            <CardFooter className="bg-muted/30 p-4 mt-auto">
+            <CardFooter className="bg-muted/50 p-4 mt-auto">
                <div className="w-full flex flex-col sm:flex-row gap-2">
                  <Link href={`/app/${app.id}`} className="flex-1">
                     <Button className="w-full" variant="outline">
@@ -77,7 +77,7 @@ export function AppCard({ app }: { app: App }) {
                             rel="noopener noreferrer"
                             className="flex-1"
                         >
-                            <Button className="w-full text-white" style={{backgroundColor: 'hsl(var(--accent))'}}>
+                            <Button className="w-full">
                                 <Download className="mr-2 h-4 w-4" />
                                 APK
                             </Button>
