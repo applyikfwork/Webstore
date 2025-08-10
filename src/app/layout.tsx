@@ -3,6 +3,7 @@ import './globals.css';
 import { AuthProvider } from '@/providers/auth-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/header';
+import { Footer } from '@/components/footer';
 
 export const metadata: Metadata = {
     title: 'App Showcase Central - Discover and Download Apps',
@@ -24,10 +25,11 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased">
+      <body className="font-body antialiased flex flex-col min-h-screen">
         <AuthProvider>
           <Header />
-          <main>{children}</main>
+          <main className="flex-1">{children}</main>
+          <Footer />
         </AuthProvider>
         <Toaster />
       </body>
