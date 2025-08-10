@@ -2,11 +2,18 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /apps/{document=**} {
-      allow read, write: if request.auth != null && request.auth.token.email == 'xyzapplywork@gmail.com';
-    }
+
+    // Allow public read access for the apps collection
+    // Only authenticated admin can write (create, update, delete)
     match /apps/{appId} {
-      allow read;
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.email == 'xyzapplywork@gmail.com';
+    }
+
+    // Allow public read access for site settings (like the icon)
+    // Only authenticated admin can change settings
+    match /settings/{settingId} {
+      allow read: if true;
       allow write: if request.auth != null && request.auth.token.email == 'xyzapplywork@gmail.com';
     }
   }
