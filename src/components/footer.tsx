@@ -49,10 +49,12 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 pt-8 border-t flex flex-col sm:flex-row justify-between items-center">
-          <p className="text-muted-foreground text-sm">
-            &copy; {new Date().getFullYear()} MyAppStore. All rights reserved.
-          </p>
+        <div className="mt-8 pt-8 border-t flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row gap-x-4 gap-y-2 text-center">
+            <p>&copy; {new Date().getFullYear()} MyAppStore. All rights reserved.</p>
+            <p className="hidden sm:block">|</p>
+            <p>Created by Jitender Prajapat</p>
+          </div>
           <div className="flex space-x-4 mt-4 sm:mt-0">
             {settings.twitterUrl && (
                 <Link href={settings.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">

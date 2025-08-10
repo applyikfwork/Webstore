@@ -26,6 +26,17 @@ async function getAppDetails(id: string): Promise<App | null> {
     return null;
 }
 
+const mapTagToCategory = (tags?: string[]): string => {
+    if (!tags || tags.length === 0) return "SoftwareApplication";
+    const lowerCaseTags = tags.map(t => t.toLowerCase());
+    if (lowerCaseTags.includes("game")) return "GameApplication";
+    if (lowerCaseTags.includes("business")) return "BusinessApplication";
+    if (lowerCaseTags.includes("productivity")) return "ProductivityApplication";
+    if (lowerCaseTags.includes("social")) return "SocialNetworkingApplication";
+    if (lowerCaseTags.includes("travel")) return "TravelApplication";
+    return "SoftwareApplication"; // Default
+}
+
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
     const app = await getAppDetails(params.id);
 
@@ -36,8 +47,9 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     }
 
     return {
-        title: `${app.name} | App Showcase Central`,
-        description: app.description,
+        title: `${app.name} | MyAppStore`,
+        description: app.metaDescription || app.description,
+        keywords: app.metaKeywords || app.tags?.join(', '),
     }
 }
 
@@ -55,10 +67,9 @@ export default async function AppPage({ params }: { params: { id: string } }) {
     "name": initialApp.name,
     "description": initialApp.description,
     "operatingSystem": "ANDROID", // Assuming Android, can be made dynamic if needed
-    "applicationCategory": "GameApplication", // Default, could be based on tags
+    "applicationCategory": mapTagToCategory(initialApp.tags),
     "screenshot": initialApp.screenshots?.map(s => s) || [],
     "image": initialApp.iconUrl,
-    "url": `https://yourappdomain.com/app/${initialApp.id}`, // Replace with your actual domain
     "offers": {
         "@type": "Offer",
         "price": "0",

@@ -23,6 +23,7 @@ import { db } from "@/lib/firebase";
 import type { App } from "@/lib/types";
 import { Wand2, Loader2, Star } from "lucide-react";
 import { generateAppDescription } from "@/ai/flows/generate-app-description";
+import { generateSeoMetadata } from "@/ai/flows/generate-seo-metadata";
 import { Switch } from "../ui/switch";
 
 
@@ -43,6 +44,8 @@ const AppFormSchema = z.object({
   screenshot3: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
   screenshot4: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
   screenshot5: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
+  metaDescription: z.string().optional(),
+  metaKeywords: z.string().optional(),
 }).refine(data => {
     return data.websiteUrl || data.apkUrl;
 }, {
@@ -92,10 +95,12 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
             screenshot3: '',
             screenshot4: '',
             screenshot5: '',
+            metaDescription: '',
+            metaKeywords: '',
         },
     });
 
-    const handleGenerateDescription = async () => {
+    const handleGenerateContent = async () => {
         const appName = form.getValues("name");
         const appDetails = form.getValues("appDetails");
         if (!appName || !appDetails) {
@@ -104,13 +109,20 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         }
         setIsGenerating(true);
         try {
-            const result = await generateAppDescription({ appName, appDetails });
-            form.setValue("description", result.description, { shouldValidate: true });
-            form.setValue("featureHighlights", result.featureHighlights, { shouldValidate: true });
-            toast({ title: "Content Generated", description: "AI-powered content has been added to the form." });
+            // Generate description and features
+            const descriptionResult = await generateAppDescription({ appName, appDetails });
+            form.setValue("description", descriptionResult.description, { shouldValidate: true });
+            form.setValue("featureHighlights", descriptionResult.featureHighlights, { shouldValidate: true });
+
+            // Generate SEO metadata
+            const seoResult = await generateSeoMetadata({ appName, appDescription: descriptionResult.description });
+            form.setValue("metaDescription", seoResult.metaDescription, { shouldValidate: true });
+            form.setValue("metaKeywords", seoResult.metaKeywords, { shouldValidate: true });
+            
+            toast({ title: "Content Generated", description: "AI-powered content and SEO metadata have been added." });
         } catch (error) {
             console.error("AI generation failed", error);
-            toast({ variant: "destructive", title: "AI Error", description: "Failed to generate description." });
+            toast({ variant: "destructive", title: "AI Error", description: "Failed to generate AI content." });
         } finally {
             setIsGenerating(false);
         }
@@ -137,10 +149,12 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                 description: data.description,
                 featureHighlights: data.featureHighlights,
                 version: data.version,
-                tags: data.tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
+                tags: data.tags?.split(',').map(tag => tag.trim().toLowerCase()).filter(Boolean) || [],
                 downloads: data.downloads,
                 screenshots: screenshots,
                 featured: data.featured,
+                metaDescription: data.metaDescription,
+                metaKeywords: data.metaKeywords,
             };
 
             if (initialData?.id) {
@@ -255,7 +269,7 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                     <FormField control={form.control} name="appDetails" render={({ field }) => (
                         <FormItem><FormLabel>App Details for AI</FormLabel><FormControl><Textarea placeholder="Describe what your app does, its main features, target audience, etc." className="resize-y min-h-[100px]" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                     <Button type="button" size="sm" variant="outline" className="absolute top-0 right-0" onClick={handleGenerateDescription} disabled={isGenerating}>
+                     <Button type="button" size="sm" variant="outline" className="absolute top-0 right-0" onClick={handleGenerateContent} disabled={isGenerating}>
                         {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4 text-accent" />}
                         Generate
                     </Button>

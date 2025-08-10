@@ -15,6 +15,8 @@ export interface App {
   tags?: string[];
   screenshots?: string[];
   featured?: boolean;
+  metaDescription?: string;
+  metaKeywords?: string;
 }
 
 export interface SiteSettingsData {
