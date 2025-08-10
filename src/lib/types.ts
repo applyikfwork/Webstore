@@ -19,6 +19,7 @@ export interface App {
 export interface SiteSettingsData {
     iconUrl?: string;
     tagline?: string;
+    loginEnabled?: boolean;
 }
 
 export interface AdSettingsData {

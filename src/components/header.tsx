@@ -16,7 +16,7 @@ import type { SiteSettingsData } from "@/lib/types";
 export function Header() {
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
-    const [settings, setSettings] = useState<SiteSettingsData>({});
+    const [settings, setSettings] = useState<SiteSettingsData>({ loginEnabled: true });
     const [loading, setLoading] = useState(true);
     const [theme, setTheme] = useState('light');
 
@@ -28,10 +28,11 @@ export function Header() {
             setLoading(false);
         });
 
-        // Set initial theme based on system preference or localStorage
-        const storedTheme = localStorage.getItem('theme') || 'light';
+        const storedTheme = typeof window !== 'undefined' ? localStorage.getItem('theme') || 'light' : 'light';
         setTheme(storedTheme);
-        document.documentElement.classList.toggle('dark', storedTheme === 'dark');
+        if (typeof window !== 'undefined') {
+            document.documentElement.classList.toggle('dark', storedTheme === 'dark');
+        }
 
         return () => unsubscribe();
     }, []);
@@ -48,6 +49,8 @@ export function Header() {
         router.push('/');
     };
 
+    const loginEnabled = settings.loginEnabled === undefined ? true : settings.loginEnabled;
+
     return (
         <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-14 max-w-screen-2xl items-center">
@@ -58,7 +61,7 @@ export function Header() {
                         settings.iconUrl && <Image src={settings.iconUrl} alt="Site Icon" width={32} height={32} className="rounded-md" />
                     )}
                     <div className="flex flex-col">
-                        <span className="font-bold sm:inline-block font-headline">
+                        <span className="font-bold sm:inline-block font-headline drop-shadow-sm">
                            MyAppStore
                         </span>
                         {settings.tagline && <p className="text-xs text-muted-foreground hidden md:block">{settings.tagline}</p>}
@@ -85,12 +88,14 @@ export function Header() {
                             </Button>
                         </>
                     ) : (
-                        <Link href="/login">
-                            <Button>
-                                <LogIn className="mr-2 h-4 w-4" />
-                                Login
-                            </Button>
-                        </Link>
+                       loginEnabled && (
+                            <Link href="/login">
+                                <Button>
+                                    <LogIn className="mr-2 h-4 w-4" />
+                                    Login
+                                </Button>
+                            </Link>
+                       )
                     )}
                 </div>
             </div>

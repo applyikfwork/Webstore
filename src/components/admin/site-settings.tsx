@@ -23,11 +23,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Save } from "lucide-react";
 import Image from "next/image";
 import type { SiteSettingsData } from "@/lib/types";
+import { Switch } from "../ui/switch";
 
 
 const SiteSettingsSchema = z.object({
   iconUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
   tagline: z.string().optional(),
+  loginEnabled: z.boolean().default(true),
 });
 
 type SiteSettingsFormValues = z.infer<typeof SiteSettingsSchema>;
@@ -43,6 +45,7 @@ export function SiteSettings() {
         defaultValues: {
             iconUrl: "",
             tagline: "",
+            loginEnabled: true,
         }
     });
 
@@ -56,6 +59,7 @@ export function SiteSettings() {
                 setCurrentIconUrl(settings.iconUrl || null);
                 form.setValue("iconUrl", settings.iconUrl || "");
                 form.setValue("tagline", settings.tagline || "");
+                form.setValue("loginEnabled", settings.loginEnabled === undefined ? true : settings.loginEnabled);
             }
             setLoading(false);
         };
@@ -68,7 +72,8 @@ export function SiteSettings() {
         try {
             await setDoc(doc(db, "settings", "site"), { 
                 iconUrl: data.iconUrl,
-                tagline: data.tagline 
+                tagline: data.tagline,
+                loginEnabled: data.loginEnabled,
             }, { merge: true });
             
             if(data.iconUrl) setCurrentIconUrl(data.iconUrl);
@@ -122,6 +127,27 @@ export function SiteSettings() {
                                 <FormMessage />
                             </FormItem>
                         )} />
+
+                        <FormField
+                            control={form.control}
+                            name="loginEnabled"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                <div className="space-y-0.5">
+                                    <FormLabel>Enable User Login</FormLabel>
+                                    <FormDescription>
+                                    Allow users to log in to the admin panel.
+                                    </FormDescription>
+                                </div>
+                                <FormControl>
+                                    <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                </FormItem>
+                            )}
+                        />
 
                         <div className="flex justify-end">
                             <Button type="submit" disabled={isSubmitting || loading}>
