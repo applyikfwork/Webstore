@@ -8,5 +8,5 @@ export interface App {
   iconUrl: string;
   description: string;
   featureHighlights: string;
-  createdAt: Timestamp;
+  createdAt: Timestamp | string;
 }

@@ -9,7 +9,14 @@ export default async function Home() {
   const appsCollectionRef = collection(db, "apps");
   const q = query(appsCollectionRef, orderBy("createdAt", "desc"));
   const querySnapshot = await getDocs(q);
-  const apps = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as App[];
+  const apps = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt.toDate().toISOString(),
+      } as App;
+  });
 
   return (
     <div className="min-h-screen flex flex-col">
