@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { App, AdSettingsData } from "@/lib/types";
@@ -10,6 +11,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { AdRenderer } from "./ad-renderer";
 
 
 function AppCard({ app }: { app: App }) {
@@ -115,10 +117,9 @@ export function HomeClient({ apps }: HomeClientProps) {
   return (
     <>
       {adSettings?.homePageAdCode && (
-        <div 
-            className="my-8 flex justify-center"
-            dangerouslySetInnerHTML={{ __html: adSettings.homePageAdCode }}
-        />
+        <div className="my-8 flex justify-center">
+            <AdRenderer adCode={adSettings.homePageAdCode} />
+        </div>
       )}
       {apps.length === 0 ? (
         <div className="text-center py-16">

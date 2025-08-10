@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { AdRenderer } from "./ad-renderer";
 
 interface AppDetailClientProps {
   initialApp: App;
@@ -188,10 +189,9 @@ export function AppDetailClient({ initialApp, appId }: AppDetailClientProps) {
         </div>
 
         {adSettings?.appDetailPageAdCode && (
-            <div 
-                className="my-8 flex justify-center"
-                dangerouslySetInnerHTML={{ __html: adSettings.appDetailPageAdCode }}
-            />
+            <div className="my-8 flex justify-center">
+                <AdRenderer adCode={adSettings.appDetailPageAdCode} />
+            </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 mt-12">
