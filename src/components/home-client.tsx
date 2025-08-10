@@ -26,7 +26,7 @@ function AppCard({ app }: { app: App }) {
     }
 
     return (
-        <Card className="flex flex-col w-full overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1 bg-card">
+        <Card className="flex flex-col w-full overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1 bg-card border">
             <CardHeader className="flex-row items-start gap-4 p-4">
                 <Image
                     src={app.iconUrl}
@@ -53,7 +53,7 @@ function AppCard({ app }: { app: App }) {
                   <p className="text-muted-foreground line-clamp-2">{app.featureHighlights}</p>
                 </div>
             </CardContent>
-            <CardFooter className="bg-muted/50 p-4 mt-auto">
+            <CardFooter className="bg-muted/50 p-4 mt-auto border-t">
                <div className="w-full flex flex-col sm:flex-row gap-2">
                  <Link href={`/app/${app.id}`} className="flex-1">
                     <Button className="w-full" variant="outline">
