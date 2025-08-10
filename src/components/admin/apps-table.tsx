@@ -69,11 +69,6 @@ export function AppsTable({ onEdit }: AppsTableProps) {
         
         try {
             await deleteDoc(doc(db, "apps", appToDelete.id));
-
-            // Note: Deleting from Cloudinary would require a separate backend action 
-            // and is not implemented here for security reasons. 
-            // The files will remain in Cloudinary but will no longer be linked in the app.
-
             toast({
                 title: "Success",
                 description: `"${appToDelete.name}" has been deleted.`,
@@ -89,6 +84,13 @@ export function AppsTable({ onEdit }: AppsTableProps) {
             setAppToDelete(null);
         }
     };
+
+    const getAppType = (app: App) => {
+        if (app.websiteUrl && app.apkUrl) return "Website & APK";
+        if (app.websiteUrl) return "Website";
+        if (app.apkUrl) return "APK";
+        return "N/A";
+    }
 
     if (loading) {
         return (
@@ -107,7 +109,7 @@ export function AppsTable({ onEdit }: AppsTableProps) {
                         <TableRow key={i}>
                             <TableCell className="hidden sm:table-cell"><Skeleton className="h-12 w-12 rounded-lg"/></TableCell>
                             <TableCell><Skeleton className="h-4 w-[200px]"/></TableCell>
-                            <TableCell><Skeleton className="h-6 w-[80px] rounded-full"/></TableCell>
+                            <TableCell><Skeleton className="h-6 w-[120px] rounded-full"/></TableCell>
                             <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto rounded-md"/></TableCell>
                         </TableRow>
                         ))}
@@ -137,7 +139,7 @@ export function AppsTable({ onEdit }: AppsTableProps) {
                                     <Image src={app.iconUrl} alt={app.name} width={48} height={48} className="rounded-md object-cover border"/>
                                 </TableCell>
                                 <TableCell className="font-medium">{app.name}</TableCell>
-                                <TableCell className="hidden md:table-cell"><Badge variant="secondary" className="capitalize">{app.type}</Badge></TableCell>
+                                <TableCell className="hidden md:table-cell"><Badge variant="secondary" className="capitalize">{getAppType(app)}</Badge></TableCell>
                                 <TableCell className="hidden lg:table-cell text-muted-foreground">
                                     {app.createdAt?.toDate().toLocaleDateString()}
                                 </TableCell>
@@ -170,7 +172,7 @@ export function AppsTable({ onEdit }: AppsTableProps) {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete "{appToDelete?.name}" and remove its data from our servers. The uploaded files will remain on Cloudinary.
+                        This action cannot be undone. This will permanently delete "{appToDelete?.name}" and remove its data from our servers.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

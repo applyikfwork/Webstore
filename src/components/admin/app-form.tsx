@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { addDoc, collection, doc, serverTimestamp, updateDoc } from "firebase/firestore";
@@ -28,19 +27,15 @@ import { generateAppDescription } from "@/ai/flows/generate-app-description";
 
 const AppFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
-  type: z.enum(["website", "apk"], { required_error: "You need to select an app type." }),
   websiteUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
   apkUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
   iconUrl: z.string().url("Please enter a valid URL for the icon."),
   appDetails: z.string().min(10, "Details must be at least 10 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
   featureHighlights: z.string().min(10, "Feature highlights must be at least 10 characters."),
-}).refine(data => data.type === 'website' ? (data.websiteUrl && data.websiteUrl.length > 0) : true, {
-  message: "Website URL is required.",
+}).refine(data => data.websiteUrl || data.apkUrl, {
+  message: "At least one URL (Website or APK) is required.",
   path: ["websiteUrl"],
-}).refine(data => data.type === 'apk' ? (data.apkUrl && data.apkUrl.length > 0) : true, {
-    message: "APK URL is required.",
-    path: ["apkUrl"],
 });
 
 
@@ -60,7 +55,6 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         resolver: zodResolver(AppFormSchema),
         defaultValues: initialData || {
             name: "",
-            type: "website",
             websiteUrl: "",
             apkUrl: "",
             iconUrl: "",
@@ -96,9 +90,8 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         try {
             const appPayload: Omit<App, 'id' | 'createdAt'> & { createdAt?: any } = {
                 name: data.name,
-                type: data.type,
-                websiteUrl: data.type === 'website' ? data.websiteUrl : '',
-                apkUrl: data.type === 'apk' ? data.apkUrl : '',
+                websiteUrl: data.websiteUrl,
+                apkUrl: data.apkUrl,
                 iconUrl: data.iconUrl,
                 description: data.description,
                 featureHighlights: data.featureHighlights,
@@ -121,8 +114,6 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         }
     }
 
-    const appType = form.watch("type");
-
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -130,22 +121,13 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                     <FormItem><FormLabel>App Name</FormLabel><FormControl><Input placeholder="My Awesome App" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
 
-                <FormField control={form.control} name="type" render={({ field }) => (
-                    <FormItem className="space-y-3"><FormLabel>App Type</FormLabel><FormControl>
-                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
-                            <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="website" /></FormControl><FormLabel className="font-normal">Website</FormLabel></FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="apk" /></FormControl><FormLabel className="font-normal">APK</FormLabel></FormItem>
-                        </RadioGroup>
-                    </FormControl><FormMessage /></FormItem>
+                <FormField control={form.control} name="websiteUrl" render={({ field }) => (
+                    <FormItem><FormLabel>Website URL (Optional)</FormLabel><FormControl><Input placeholder="https://example.com" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-
-                {appType === 'website' && <FormField control={form.control} name="websiteUrl" render={({ field }) => (
-                    <FormItem><FormLabel>Website URL</FormLabel><FormControl><Input placeholder="https://example.com" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />}
                 
-                {appType === 'apk' && <FormField control={form.control} name="apkUrl" render={({ field }) => (
-                    <FormItem><FormLabel>APK URL</FormLabel><FormControl><Input placeholder="https://example.com/app.apk" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />}
+                <FormField control={form.control} name="apkUrl" render={({ field }) => (
+                    <FormItem><FormLabel>APK URL (Optional)</FormLabel><FormControl><Input placeholder="https://example.com/app.apk" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
 
                 <FormField control={form.control} name="iconUrl" render={({ field }) => (
                     <FormItem><FormLabel>App Icon URL</FormLabel><FormControl><Input placeholder="https://example.com/icon.png" {...field} /></FormControl><FormMessage /></FormItem>
