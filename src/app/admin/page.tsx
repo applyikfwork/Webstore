@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { App } from "@/lib/types";
 import { AppsTable } from "@/components/admin/apps-table";
 import { AppForm } from "@/components/admin/app-form";
+import { SiteSettings } from "@/components/admin/site-settings";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,8 +12,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Header } from "@/components/header";
 import { PlusCircle } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 export default function AdminPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -35,15 +36,28 @@ export default function AdminPage() {
 
     return (
         <div className="min-h-screen">
-            <Header />
             <main className="container mx-auto px-4 py-8">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-3xl font-bold font-headline">Admin Dashboard</h1>
-                    <Button onClick={handleAddNew}>
-                        <PlusCircle className="mr-2 h-4 w-4"/>
-                        Add New App
-                    </Button>
                 </div>
+
+                <div className="space-y-8">
+                    <SiteSettings />
+
+                    <Separator />
+
+                    <div>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-bold">Manage Apps</h2>
+                            <Button onClick={handleAddNew}>
+                                <PlusCircle className="mr-2 h-4 w-4"/>
+                                Add New App
+                            </Button>
+                        </div>
+                         <AppsTable onEdit={handleEdit} />
+                    </div>
+                </div>
+
 
                 <Dialog open={isFormOpen} onOpenChange={(open) => {
                     if (!open) {
@@ -63,7 +77,7 @@ export default function AdminPage() {
                     </DialogContent>
                 </Dialog>
 
-                <AppsTable onEdit={handleEdit} />
+               
             </main>
         </div>
     );

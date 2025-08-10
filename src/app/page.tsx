@@ -2,7 +2,6 @@ import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { App } from "@/lib/types";
 import { AppCard } from "@/components/app-card";
-import { Header } from "@/components/header";
 
 export const revalidate = 0;
 
@@ -14,7 +13,6 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold font-headline">App Showcase Central</h1>
