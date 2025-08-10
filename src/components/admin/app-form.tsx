@@ -33,6 +33,9 @@ const AppFormSchema = z.object({
   appDetails: z.string().min(10, "Details must be at least 10 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
   featureHighlights: z.string().min(10, "Feature highlights must be at least 10 characters."),
+  version: z.string().optional(),
+  tags: z.string().optional(),
+  screenshots: z.string().optional(),
 }).refine(data => {
     return data.websiteUrl || data.apkUrl;
 }, {
@@ -57,6 +60,8 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         resolver: zodResolver(AppFormSchema),
         defaultValues: initialData ? {
             ...initialData,
+            tags: initialData.tags?.join(', '),
+            screenshots: initialData.screenshots?.join(', '),
         } : {
             name: "",
             websiteUrl: "",
@@ -65,6 +70,9 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
             appDetails: "",
             description: "",
             featureHighlights: "",
+            version: "1.0.0",
+            tags: "",
+            screenshots: "",
         },
     });
 
@@ -93,13 +101,16 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         setIsSubmitting(true);
 
         try {
-            const appPayload: Omit<App, 'id' | 'createdAt'> & { createdAt?: any } = {
+            const appPayload: Omit<App, 'id' | 'createdAt'> & { createdAt?: any, downloads?: number } = {
                 name: data.name,
                 websiteUrl: data.websiteUrl || "",
                 apkUrl: data.apkUrl || "",
                 iconUrl: data.iconUrl,
                 description: data.description,
                 featureHighlights: data.featureHighlights,
+                version: data.version,
+                tags: data.tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
+                screenshots: data.screenshots?.split(',').map(url => url.trim()).filter(Boolean) || [],
             };
 
             if (initialData?.id) {
@@ -107,6 +118,7 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                 toast({ title: "Success", description: "App updated successfully." });
             } else {
                 appPayload.createdAt = serverTimestamp();
+                appPayload.downloads = 0;
                 await addDoc(collection(db, "apps"), appPayload);
                 toast({ title: "Success", description: "App added successfully." });
             }
@@ -127,6 +139,10 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                     <FormItem><FormLabel>App Name</FormLabel><FormControl><Input placeholder="My Awesome App" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
 
+                 <FormField control={form.control} name="version" render={({ field }) => (
+                    <FormItem><FormLabel>Version</FormLabel><FormControl><Input placeholder="1.0.0" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+
                 <FormField control={form.control} name="websiteUrl" render={({ field }) => (
                     <FormItem><FormLabel>Website URL (Optional)</FormLabel><FormControl><Input placeholder="https://example.com" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
@@ -135,10 +151,10 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                     <FormItem>
                         <FormLabel>APK URL (Optional)</FormLabel>
                         <FormControl>
-                            <Input placeholder="https://your-supabase-url.co/path/to/your.apk" {...field} />
+                            <Input placeholder="Paste public URL from Supabase" {...field} />
                         </FormControl>
-                        <FormDescription>
-                            Manually upload your APK to Supabase and paste the public URL here.
+                         <FormDescription>
+                            Upload your APK to a public bucket in Supabase and paste the URL here.
                       </FormDescription>
                         <FormMessage />
                     </FormItem>
@@ -146,6 +162,14 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
 
                 <FormField control={form.control} name="iconUrl" render={({ field }) => (
                     <FormItem><FormLabel>App Icon URL</FormLabel><FormControl><Input placeholder="https://example.com/icon.png" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                
+                 <FormField control={form.control} name="tags" render={({ field }) => (
+                    <FormItem><FormLabel>Tags</FormLabel><FormControl><Input placeholder="e.g. browser, privacy, utility" {...field} /></FormControl><FormDescription>Comma-separated list of tags.</FormDescription><FormMessage /></FormItem>
+                )} />
+
+                 <FormField control={form.control} name="screenshots" render={({ field }) => (
+                    <FormItem><FormLabel>Screenshots</FormLabel><FormControl><Textarea placeholder="e.g. https://example.com/ss1.png, https://example.com/ss2.png" {...field} /></FormControl><FormDescription>Comma-separated list of screenshot URLs.</FormDescription><FormMessage /></FormItem>
                 )} />
 
                 <div className="relative">
@@ -159,11 +183,11 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                 </div>
                 
                 <FormField control={form.control} name="description" render={({ field }) => (
-                    <FormItem><FormLabel>Public Description</FormLabel><FormControl><Textarea placeholder="AI-generated description will appear here..." className="resize-y min-h-[100px]" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Public Short Description</FormLabel><FormControl><Textarea placeholder="AI-generated description will appear here..." className="resize-y min-h-[100px]" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
 
                 <FormField control={form.control} name="featureHighlights" render={({ field }) => (
-                    <FormItem><FormLabel>Public Feature Highlights</FormLabel><FormControl><Textarea placeholder="AI-generated feature list will appear here..." className="resize-y" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Public Full Description / Features</FormLabel><FormControl><Textarea placeholder="AI-generated feature list will appear here..." className="resize-y" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
 
                 <div className="flex justify-end gap-2 pt-4">

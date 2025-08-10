@@ -22,10 +22,12 @@ import { db } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Save } from "lucide-react";
 import Image from "next/image";
+import type { SiteSettingsData } from "@/lib/types";
 
 
 const SiteSettingsSchema = z.object({
-  iconUrl: z.string().url("Please enter a valid URL."),
+  iconUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
+  tagline: z.string().optional(),
 });
 
 type SiteSettingsFormValues = z.infer<typeof SiteSettingsSchema>;
@@ -40,6 +42,7 @@ export function SiteSettings() {
         resolver: zodResolver(SiteSettingsSchema),
         defaultValues: {
             iconUrl: "",
+            tagline: "",
         }
     });
 
@@ -49,9 +52,10 @@ export function SiteSettings() {
             const docRef = doc(db, "settings", "site");
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
-                const url = docSnap.data().iconUrl;
-                setCurrentIconUrl(url);
-                form.setValue("iconUrl", url);
+                const settings = docSnap.data() as SiteSettingsData;
+                setCurrentIconUrl(settings.iconUrl || null);
+                form.setValue("iconUrl", settings.iconUrl || "");
+                form.setValue("tagline", settings.tagline || "");
             }
             setLoading(false);
         };
@@ -62,12 +66,17 @@ export function SiteSettings() {
     async function onSubmit(data: SiteSettingsFormValues) {
         setIsSubmitting(true);
         try {
-            await setDoc(doc(db, "settings", "site"), { iconUrl: data.iconUrl });
-            setCurrentIconUrl(data.iconUrl);
-            toast({ title: "Success", description: "Site icon updated successfully." });
+            await setDoc(doc(db, "settings", "site"), { 
+                iconUrl: data.iconUrl,
+                tagline: data.tagline 
+            }, { merge: true });
+            
+            if(data.iconUrl) setCurrentIconUrl(data.iconUrl);
+            
+            toast({ title: "Success", description: "Site settings updated successfully." });
         } catch (error) {
             console.error("Form submission error", error);
-            toast({ variant: "destructive", title: "Error", description: "Failed to update site icon." });
+            toast({ variant: "destructive", title: "Error", description: "Failed to update site settings." });
         } finally {
             setIsSubmitting(false);
         }
@@ -80,7 +89,7 @@ export function SiteSettings() {
             </CardHeader>
             <CardContent>
                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <div className="flex items-end gap-4">
                              {loading ? (
                                 <Loader2 className="h-16 w-16 animate-spin text-muted-foreground" />
@@ -97,21 +106,31 @@ export function SiteSettings() {
                                         <FormControl>
                                             <Input placeholder="https://example.com/icon.png" {...field} />
                                         </FormControl>
-                                        <FormDescription>Paste the URL of your site icon. This will replace the current icon.</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )} />
                             </div>
                         </div>
 
+                        <FormField control={form.control} name="tagline" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Site Tagline</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Secure, Fast, No Bloat." {...field} />
+                                </FormControl>
+                                <FormDescription>A short, catchy phrase for your site header.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+
                         <div className="flex justify-end">
-                            <Button type="submit" disabled={isSubmitting}>
+                            <Button type="submit" disabled={isSubmitting || loading}>
                                 {isSubmitting ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
                                     <Save className="mr-2 h-4 w-4" />
                                 )}
-                                Save Icon
+                                Save Settings
                             </Button>
                         </div>
                     </form>

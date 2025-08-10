@@ -1,135 +1,259 @@
-import { doc, getDoc } from "firebase/firestore";
+
+"use client"
+
+import { doc, getDoc, updateDoc, increment, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { App } from "@/lib/types";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Globe, Download, CalendarDays } from "lucide-react";
+import { Download, Share, Calendar, Info, FileText, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { Metadata } from 'next'
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
- 
-type Props = {
-  params: { id: string }
-}
- 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const docRef = doc(db, "apps", params.id);
-  const docSnap = await getDoc(docRef);
+import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
-  if (!docSnap.exists()) {
-    return {
-        title: "App Not Found",
-        description: "The app you are looking for does not exist.",
+async function getAppDetails(id: string): Promise<App | null> {
+    const docRef = doc(db, "apps", id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as App;
     }
-  }
- 
-  const app = docSnap.data() as App;
- 
-  return {
-    title: `${app.name} | App Showcase`,
-    description: app.description,
-    openGraph: {
-      title: app.name,
-      description: app.description,
-      images: [
-        {
-          url: app.iconUrl,
-          width: 128,
-          height: 128,
-          alt: `${app.name} Icon`,
-        },
-      ],
-    },
-  }
+    return null;
 }
 
-export default async function AppPage({ params }: { params: { id: string } }) {
-  const docRef = doc(db, "apps", params.id);
-  const docSnap = await getDoc(docRef);
+export default function AppPage({ params }: { params: { id: string } }) {
+  const [app, setApp] = useState<App | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const router = useRouter();
 
-  if (!docSnap.exists()) {
-    notFound();
+  useEffect(() => {
+    if (!params.id) return;
+
+    const docRef = doc(db, "apps", params.id);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+            setApp({ id: docSnap.id, ...docSnap.data() } as App);
+        } else {
+            notFound();
+        }
+        setLoading(false);
+    }, (error) => {
+        console.error("Error fetching real-time app data", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not load app data."
+        });
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [params.id, toast]);
+
+  const handleDownload = async () => {
+    if (!app?.apkUrl) return;
+    try {
+        const docRef = doc(db, "apps", params.id);
+        await updateDoc(docRef, {
+            downloads: increment(1)
+        });
+        router.push(app.apkUrl);
+    } catch (error) {
+        console.error("Error updating download count", error);
+        toast({
+            variant: "destructive",
+            title: "Download Error",
+            description: "Could not process download. Please try again."
+        })
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: app?.name,
+          text: `Check out ${app?.name}, a ${app?.description}`,
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        toast({
+            variant: "destructive",
+            title: "Share Error",
+            description: "Could not share the app at this moment."
+        })
+      }
+    } else {
+        navigator.clipboard.writeText(window.location.href);
+        toast({
+            title: "Link Copied",
+            description: "App URL has been copied to your clipboard.",
+        });
+    }
+  };
+
+  if (loading) {
+    return (
+        <div className="container mx-auto max-w-5xl px-4 py-8">
+           <div className="flex flex-col md:flex-row items-start gap-8">
+                <Skeleton className="w-full md:w-48 h-48 rounded-3xl" />
+                <div className="w-full space-y-4">
+                    <Skeleton className="h-10 w-3/4" />
+                    <Skeleton className="h-6 w-1/2" />
+                    <Skeleton className="h-5 w-full" />
+                    <div className="flex gap-2">
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                    </div>
+                     <div className="flex gap-4">
+                        <Skeleton className="h-12 w-36 rounded-lg" />
+                        <Skeleton className="h-12 w-24 rounded-lg" />
+                    </div>
+                </div>
+           </div>
+           <div className="mt-12">
+                <Skeleton className="h-8 w-40 mb-4" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Skeleton className="w-full h-56 rounded-xl" />
+                    <Skeleton className="w-full h-56 rounded-xl" />
+                    <Skeleton className="w-full h-56 rounded-xl" />
+                </div>
+           </div>
+        </div>
+    );
   }
 
-  const app = { id: docSnap.id, ...docSnap.data() } as App;
-  const hasWebsite = !!app.websiteUrl;
+  if (!app) {
+    return notFound();
+  }
+  
   const hasApk = !!app.apkUrl;
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-12">
-      <div className="grid md:grid-cols-[300px_1fr] gap-8 items-start">
-        <Card className="flex flex-col items-center gap-4 p-6 sticky top-24">
+    <div className="container mx-auto max-w-5xl px-4 py-8">
+        {/* App Header */}
+        <div className="flex flex-col md:flex-row items-start gap-6 md:gap-8">
             <Image
                 src={app.iconUrl}
                 alt={`${app.name} icon`}
-                width={150}
-                height={150}
-                className="rounded-2xl border-4 border-card object-cover aspect-square shadow-lg"
+                width={192}
+                height={192}
+                className="rounded-3xl border-4 border-card object-cover aspect-square shadow-lg w-32 h-32 md:w-48 md:h-48"
             />
-            <div className="text-center">
-                <h1 className="text-3xl font-bold font-headline">{app.name}</h1>
-                <div className="flex items-center justify-center gap-2 mt-2 text-sm text-muted-foreground">
-                    <CalendarDays className="h-4 w-4"/>
-                    <span>{app.createdAt?.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            <div className="flex-1 space-y-3">
+                <h1 className="text-4xl md:text-5xl font-bold font-headline">{app.name}</h1>
+                <p className="text-lg text-muted-foreground">{app.description}</p>
+                
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground pt-2">
+                    {app.version && <div className="flex items-center gap-1.5"><Info className="h-4 w-4" /> Version {app.version}</div>}
+                    {app.downloads !== undefined && <div className="flex items-center gap-1.5"><Download className="h-4 w-4" /> {app.downloads.toLocaleString()} downloads</div>}
+                    {app.createdAt && <div className="flex items-center gap-1.5"><Calendar className="h-4 w-4" /> {new Date(app.createdAt.toString()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>}
                 </div>
-            </div>
-             <div className="flex flex-col gap-2 w-full pt-4">
-                {hasWebsite && (
-                    <a 
-                        href={app.websiteUrl}
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="flex-1"
-                    >
-                        <Button className="w-full" variant="outline">
-                            <Globe className="mr-2 h-4 w-4" />
-                            Visit Website
-                        </Button>
-                    </a>
-                 )}
-                 {hasApk && (
-                    <a 
-                        href={app.apkUrl}
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="flex-1"
-                    >
-                        <Button className="w-full">
-                            <Download className="mr-2 h-4 w-4" />
+
+                 {app.tags && app.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                        {app.tags.map(tag => (
+                            <Badge key={tag} variant="secondary" className="capitalize">#{tag}</Badge>
+                        ))}
+                    </div>
+                )}
+                
+                <div className="flex items-center gap-2 pt-4">
+                    {hasApk && (
+                        <Button size="lg" onClick={handleDownload}>
+                            <Download className="mr-2"/>
                             Download APK
                         </Button>
-                    </a>
-                 )}
-             </div>
-             <div className="text-center pt-2">
-                {(hasWebsite || hasApk) && <Badge variant="secondary" className="capitalize">
-                    {hasWebsite && hasApk ? "Website & APK" : hasWebsite ? "Website" : "APK"} Available
-                </Badge>}
+                    )}
+                     <Button size="lg" variant="outline" onClick={handleShare}>
+                        <Share className="mr-2"/>
+                        Share
+                    </Button>
+                </div>
             </div>
-        </Card>
-        <div className="space-y-8">
-            <Card>
-                <CardHeader>
-                    <h2 className="text-2xl font-semibold text-foreground">Description</h2>
-                </CardHeader>
-                <CardContent className="prose prose-stone dark:prose-invert max-w-none text-muted-foreground">
-                    <p>{app.description}</p>
-                </CardContent>
-            </Card>
-            
-            <Card>
-                <CardHeader>
-                    <h2 className="text-2xl font-semibold text-foreground">Feature Highlights</h2>
-                </CardHeader>
-                <CardContent className="prose prose-stone dark:prose-invert max-w-none text-muted-foreground">
-                    <ul className="list-disc pl-5 space-y-2">
-                       {app.featureHighlights.split('\n').map((feature, index) => feature.trim() && <li key={index}>{feature.replace(/•|-/g, '').trim()}</li>)}
-                    </ul>
-                </CardContent>
-            </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 mt-12">
+            <div>
+                 {/* Full Description */}
+                <Card>
+                    <CardContent className="pt-6">
+                        <h2 className="text-2xl font-bold mb-4">About this app</h2>
+                        <div className="prose prose-stone dark:prose-invert max-w-none text-muted-foreground whitespace-pre-wrap">
+                            {app.featureHighlights}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                 {/* Screenshots */}
+                {app.screenshots && app.screenshots.length > 0 && (
+                    <div className="mt-12">
+                        <h2 className="text-2xl font-bold mb-4">Screenshots</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {app.screenshots.map((url, index) => (
+                                <a href={url} target="_blank" rel="noopener noreferrer" key={index}>
+                                    <Image
+                                        src={url}
+                                        alt={`Screenshot ${index + 1}`}
+                                        width={1280}
+                                        height={720}
+                                        className="rounded-xl border object-cover aspect-video hover:opacity-90 transition-opacity"
+                                        data-ai-hint="app screenshot"
+                                    />
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+             <div className="space-y-6">
+                 <Card>
+                    <CardContent className="pt-6">
+                        <h3 className="font-semibold mb-4">App Details</h3>
+                        <div className="space-y-3 text-sm text-muted-foreground">
+                             <div className="flex justify-between">
+                                <span className="font-medium text-card-foreground">Version</span>
+                                <span>{app.version || 'N/A'}</span>
+                            </div>
+                             <div className="flex justify-between">
+                                <span className="font-medium text-card-foreground">Updated on</span>
+                                <span>{app.createdAt ? new Date(app.createdAt.toString()).toLocaleDateString() : 'N/A'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="font-medium text-card-foreground">Downloads</span>
+                                <span>{app.downloads !== undefined ? `${app.downloads.toLocaleString()}+` : 'N/A'}</span>
+                            </div>
+                             <div className="flex justify-between">
+                                <span className="font-medium text-card-foreground">Website</span>
+                                {app.websiteUrl ? <a href={app.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Visit</a> : <span>N/A</span>}
+                            </div>
+                        </div>
+                    </CardContent>
+                 </Card>
+            </div>
+
         </div>
     </div>
-</div>
   );
+}
+
+// We need to export this function to satisfy Next.js's requirement for generating metadata
+// even though we are fetching data on the client side.
+export async function generateMetadata({ params }: { params: { id: string }}) {
+    const app = await getAppDetails(params.id);
+
+    if (!app) {
+        return {
+            title: "App Not Found",
+        }
+    }
+
+    return {
+        title: `${app.name} | App Showcase`,
+        description: app.description,
+    }
 }
