@@ -1,7 +1,26 @@
+
+"use client";
+
 import Link from 'next/link';
 import { Twitter, Github, Linkedin } from 'lucide-react';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useEffect, useState } from 'react';
+import type { SiteSettingsData } from '@/lib/types';
 
 export function Footer() {
+  const [settings, setSettings] = useState<SiteSettingsData>({});
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(doc(db, "settings", "site"), (doc) => {
+        if (doc.exists()) {
+            setSettings(doc.data() as SiteSettingsData);
+        }
+    });
+    return () => unsubscribe();
+  }, []);
+
+
   return (
     <footer className="bg-secondary/40 dark:bg-card border-t">
       <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -18,15 +37,14 @@ export function Footer() {
             <ul className="mt-4 space-y-2 text-muted-foreground">
               <li><Link href="#" className="hover:text-primary transition-colors">About Us</Link></li>
               <li><Link href="#" className="hover:text-primary transition-colors">Contact</Link></li>
-              <li><Link href="/admin" className="hover:text-primary transition-colors">Admin Panel</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold tracking-wider uppercase text-foreground/90">Legal</h4>
             <ul className="mt-4 space-y-2 text-muted-foreground">
-              <li><Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
-              <li><Link href="#" className="hover:text-primary transition-colors">Terms of Service</Link></li>
+              <li><Link href="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms-of-service" className="hover:text-primary transition-colors">Terms of Service</Link></li>
             </ul>
           </div>
         </div>
@@ -36,15 +54,21 @@ export function Footer() {
             &copy; {new Date().getFullYear()} MyAppStore. All rights reserved.
           </p>
           <div className="flex space-x-4 mt-4 sm:mt-0">
-            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              <Twitter className="h-5 w-5" />
-            </Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              <Github className="h-5 w-5" />
-            </Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              <Linkedin className="h-5 w-5" />
-            </Link>
+            {settings.twitterUrl && (
+                <Link href={settings.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Twitter className="h-5 w-5" />
+                </Link>
+            )}
+            {settings.githubUrl && (
+                <Link href={settings.githubUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Github className="h-5 w-5" />
+                </Link>
+            )}
+            {settings.linkedinUrl && (
+                 <Link href={settings.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Linkedin className="h-5 w-5" />
+                </Link>
+            )}
           </div>
         </div>
       </div>

@@ -19,17 +19,21 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Save } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Loader2, Save, Twitter, Github, Linkedin } from "lucide-react";
 import Image from "next/image";
 import type { SiteSettingsData } from "@/lib/types";
 import { Switch } from "../ui/switch";
+import { Separator } from "../ui/separator";
 
 
 const SiteSettingsSchema = z.object({
   iconUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
   tagline: z.string().optional(),
   loginEnabled: z.boolean().default(true),
+  twitterUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
+  githubUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
+  linkedinUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
 });
 
 type SiteSettingsFormValues = z.infer<typeof SiteSettingsSchema>;
@@ -46,6 +50,9 @@ export function SiteSettings() {
             iconUrl: "",
             tagline: "",
             loginEnabled: true,
+            twitterUrl: "",
+            githubUrl: "",
+            linkedinUrl: "",
         }
     });
 
@@ -60,6 +67,9 @@ export function SiteSettings() {
                 form.setValue("iconUrl", settings.iconUrl || "");
                 form.setValue("tagline", settings.tagline || "");
                 form.setValue("loginEnabled", settings.loginEnabled === undefined ? true : settings.loginEnabled);
+                form.setValue("twitterUrl", settings.twitterUrl || "");
+                form.setValue("githubUrl", settings.githubUrl || "");
+                form.setValue("linkedinUrl", settings.linkedinUrl || "");
             }
             setLoading(false);
         };
@@ -70,11 +80,7 @@ export function SiteSettings() {
     async function onSubmit(data: SiteSettingsFormValues) {
         setIsSubmitting(true);
         try {
-            await setDoc(doc(db, "settings", "site"), { 
-                iconUrl: data.iconUrl,
-                tagline: data.tagline,
-                loginEnabled: data.loginEnabled,
-            }, { merge: true });
+            await setDoc(doc(db, "settings", "site"), data, { merge: true });
             
             if(data.iconUrl) setCurrentIconUrl(data.iconUrl);
             
@@ -91,42 +97,82 @@ export function SiteSettings() {
         <Card>
             <CardHeader>
                 <CardTitle>Site Settings</CardTitle>
+                <CardDescription>Manage general site settings, branding, and social media links.</CardDescription>
             </CardHeader>
             <CardContent>
                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <div className="flex items-end gap-4">
-                             {loading ? (
-                                <Loader2 className="h-16 w-16 animate-spin text-muted-foreground" />
-                            ) : currentIconUrl && (
-                                <div className="space-y-2">
-                                    <FormLabel>Current Icon</FormLabel>
-                                    <Image src={currentIconUrl} alt="Current Site Icon" width={64} height={64} className="rounded-lg border object-cover" />
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                        <div className="space-y-6">
+                            <div className="flex items-end gap-4">
+                                {loading ? (
+                                    <Loader2 className="h-16 w-16 animate-spin text-muted-foreground" />
+                                ) : currentIconUrl && (
+                                    <div className="space-y-2">
+                                        <FormLabel>Current Icon</FormLabel>
+                                        <Image src={currentIconUrl} alt="Current Site Icon" width={64} height={64} className="rounded-lg border object-cover" />
+                                    </div>
+                                )}
+                                <div className="flex-1">
+                                    <FormField control={form.control} name="iconUrl" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Site Icon URL</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="https://example.com/icon.png" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
                                 </div>
-                            )}
-                            <div className="flex-1">
-                                <FormField control={form.control} name="iconUrl" render={({ field }) => (
+                            </div>
+
+                            <FormField control={form.control} name="tagline" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Site Tagline</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Secure, Fast, No Bloat." {...field} />
+                                    </FormControl>
+                                    <FormDescription>A short, catchy phrase for your site header.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                        </div>
+                        
+                        <Separator />
+                        
+                        <div>
+                             <h3 className="text-lg font-medium mb-4">Follow Us Links</h3>
+                             <div className="space-y-4">
+                                <FormField control={form.control} name="twitterUrl" render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Site Icon URL</FormLabel>
+                                        <FormLabel className="flex items-center gap-2"><Twitter className="h-4 w-4 text-sky-500" /> Twitter URL</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="https://example.com/icon.png" {...field} />
+                                            <Input placeholder="https://twitter.com/your-profile" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )} />
-                            </div>
+                                 <FormField control={form.control} name="githubUrl" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex items-center gap-2"><Github className="h-4 w-4" /> GitHub URL</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="https://github.com/your-profile" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                 <FormField control={form.control} name="linkedinUrl" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex items-center gap-2"><Linkedin className="h-4 w-4 text-blue-600" /> LinkedIn URL</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="https://linkedin.com/in/your-profile" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                             </div>
                         </div>
 
-                        <FormField control={form.control} name="tagline" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Site Tagline</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Secure, Fast, No Bloat." {...field} />
-                                </FormControl>
-                                <FormDescription>A short, catchy phrase for your site header.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
+                        <Separator />
 
                         <FormField
                             control={form.control}

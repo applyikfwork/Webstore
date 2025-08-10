@@ -1,3 +1,4 @@
+
 import type { Timestamp } from "firebase/firestore";
 
 export interface App {
@@ -20,6 +21,9 @@ export interface SiteSettingsData {
     iconUrl?: string;
     tagline?: string;
     loginEnabled?: boolean;
+    twitterUrl?: string;
+    githubUrl?: string;
+    linkedinUrl?: string;
 }
 
 export interface AdSettingsData {
