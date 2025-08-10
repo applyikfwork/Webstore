@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from "react";
@@ -18,12 +19,10 @@ export default function AdminLayout({
     if (loading) return;
     if (!user) {
       router.replace("/login");
-    } else if (user.email !== 'xyzapplywork@gmail.com') {
-      router.replace("/");
     }
   }, [user, loading, router]);
 
-  if (loading || !user || user.email !== 'xyzapplywork@gmail.com') {
+  if (loading || !user) {
     return (
         <div className="flex h-screen w-full flex-col items-center justify-center gap-4">
             <Loader2 className="h-8 w-8 animate-spin text-accent" />
