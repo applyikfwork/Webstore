@@ -19,22 +19,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { addDoc, collection, doc, serverTimestamp, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import type { App } from "@/lib/types";
-import { Wand2, Loader2 } from "lucide-react";
+import { Wand2, Loader2, Upload } from "lucide-react";
 import { generateAppDescription } from "@/ai/flows/generate-app-description";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
+import { Progress } from "@/components/ui/progress";
 
 
 const AppFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   websiteUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
+  apkFile: z.any().optional(),
   apkUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
   iconUrl: z.string().url("Please enter a valid URL for the icon."),
   appDetails: z.string().min(10, "Details must be at least 10 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
   featureHighlights: z.string().min(10, "Feature highlights must be at least 10 characters."),
-}).refine(data => data.websiteUrl || data.apkUrl, {
-  message: "At least one URL (Website or APK) is required.",
+}).refine(data => data.websiteUrl || data.apkUrl || data.apkFile, {
+  message: "At least one URL (Website or APK) or an APK file is required.",
   path: ["websiteUrl"],
 });
 
@@ -50,13 +53,18 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     
     const form = useForm<AppFormValues>({
         resolver: zodResolver(AppFormSchema),
-        defaultValues: initialData || {
+        defaultValues: initialData ? {
+            ...initialData,
+            apkFile: undefined,
+        } : {
             name: "",
             websiteUrl: "",
             apkUrl: "",
+            apkFile: undefined,
             iconUrl: "",
             appDetails: "",
             description: "",
@@ -85,13 +93,55 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         }
     };
 
+    const uploadApk = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const storageRef = ref(storage, `apks/${Date.now()}_${file.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        uploadTask.on('state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setUploadProgress(progress);
+          },
+          (error) => {
+            console.error("Upload failed:", error);
+            reject(error);
+          },
+          async () => {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(downloadURL);
+          }
+        );
+      });
+    }
+
     async function onSubmit(data: AppFormValues) {
         setIsSubmitting(true);
+        setUploadProgress(null);
+
         try {
+            let apkUrl = data.apkUrl;
+            const apkFile = data.apkFile?.[0];
+
+            if (apkFile) {
+                 if (apkFile.type !== 'application/vnd.android.package-archive') {
+                    toast({
+                        variant: "destructive",
+                        title: "Invalid File Type",
+                        description: "Please upload a valid .apk file.",
+                    });
+                    setIsSubmitting(false);
+                    return;
+                }
+                toast({ title: "Uploading APK...", description: "Please wait for the file to upload." });
+                apkUrl = await uploadApk(apkFile);
+                setUploadProgress(100);
+            }
+
             const appPayload: Omit<App, 'id' | 'createdAt'> & { createdAt?: any } = {
                 name: data.name,
                 websiteUrl: data.websiteUrl,
-                apkUrl: data.apkUrl,
+                apkUrl: apkUrl,
                 iconUrl: data.iconUrl,
                 description: data.description,
                 featureHighlights: data.featureHighlights,
@@ -111,6 +161,7 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
             toast({ variant: "destructive", title: "Error", description: "Failed to save the app." });
         } finally {
             setIsSubmitting(false);
+            setUploadProgress(null);
         }
     }
 
@@ -125,9 +176,36 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                     <FormItem><FormLabel>Website URL (Optional)</FormLabel><FormControl><Input placeholder="https://example.com" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 
-                <FormField control={form.control} name="apkUrl" render={({ field }) => (
-                    <FormItem><FormLabel>APK URL (Optional)</FormLabel><FormControl><Input placeholder="https://example.com/app.apk" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
+                <FormField
+                  control={form.control}
+                  name="apkFile"
+                  render={({ field: { value, onChange, ...fieldProps } }) => (
+                    <FormItem>
+                      <FormLabel>APK File (Optional)</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                            <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                            {...fieldProps}
+                            placeholder="Upload APK"
+                            type="file"
+                            accept=".apk"
+                            onChange={(event) => onChange(event.target.files)}
+                            className="pl-9"
+                            />
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        {initialData?.apkUrl ? "Uploading a new file will replace the existing one." : "Upload the .apk file for your app."}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {uploadProgress !== null && (
+                    <Progress value={uploadProgress} className="w-full" />
+                )}
 
                 <FormField control={form.control} name="iconUrl" render={({ field }) => (
                     <FormItem><FormLabel>App Icon URL</FormLabel><FormControl><Input placeholder="https://example.com/icon.png" {...field} /></FormControl><FormMessage /></FormItem>
@@ -152,7 +230,7 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                 )} />
 
                 <div className="flex justify-end gap-2 pt-4">
-                    <Button type="button" variant="ghost" onClick={onFinished}>Cancel</Button>
+                    <Button type="button" variant="ghost" onClick={onFinished} disabled={isSubmitting}>Cancel</Button>
                     <Button type="submit" disabled={isSubmitting}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {initialData ? "Save Changes" : "Add App"}
