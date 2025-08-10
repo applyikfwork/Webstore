@@ -35,7 +35,7 @@ export default async function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1">
-        <section className="relative flex flex-col items-center justify-center min-h-[50vh] text-center px-4 py-20 bg-gradient-to-br from-indigo-50 via-white to-fuchsia-50 dark:from-indigo-950/50 dark:via-background dark:to-fuchsia-950/50">
+        <section className="relative flex flex-col items-center justify-center text-center px-4 py-20 bg-gradient-to-br from-indigo-50 via-white to-fuchsia-50 dark:from-indigo-950/50 dark:via-background dark:to-fuchsia-950/50">
            <div className="max-w-3xl">
                 <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-fuchsia-500 drop-shadow-sm">
                     MyAppStore
