@@ -36,9 +36,14 @@ const AppFormSchema = z.object({
   appDetails: z.string().min(10, "Details must be at least 10 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
   featureHighlights: z.string().min(10, "Feature highlights must be at least 10 characters."),
-}).refine(data => data.websiteUrl || data.apkUrl || (data.apkFile && data.apkFile.length > 0), {
-  message: "Either a Website URL, an existing APK URL, or a new APK file is required.",
-  path: ["websiteUrl"], // You can adjust the path to where the error message should appear.
+}).refine(data => {
+    // If we have an existing app, the initial apkUrl might be there
+    if (data.apkUrl) return true;
+    // If we are creating a new one or editing, we need one of these
+    return data.websiteUrl || (data.apkFile && data.apkFile.length > 0);
+}, {
+  message: "Either a Website URL or a new APK file is required.",
+  path: ["websiteUrl"],
 });
 
 
@@ -105,11 +110,16 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
           },
           (error) => {
             console.error("Upload failed:", error);
-            reject(error);
+            reject(new Error(`APK upload failed: ${error.message}`));
           },
           async () => {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            resolve(downloadURL);
+            try {
+                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve(downloadURL);
+            } catch (error) {
+                console.error("Failed to get download URL:", error);
+                reject(new Error("Could not get the file's download URL."));
+            }
           }
         );
       });
@@ -120,7 +130,7 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
         setUploadProgress(null);
 
         try {
-            let apkUrl = data.apkUrl;
+            let finalApkUrl = initialData?.apkUrl || data.apkUrl;
             const apkFile = data.apkFile?.[0];
 
             if (apkFile) {
@@ -134,14 +144,15 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                     return;
                 }
                 toast({ title: "Uploading APK...", description: "Please wait for the file to upload." });
-                apkUrl = await uploadApk(apkFile);
-                setUploadProgress(100);
+                finalApkUrl = await uploadApk(apkFile);
+                setUploadProgress(100); 
+                toast({ title: "Upload Complete", description: "APK successfully uploaded." });
             }
 
             const appPayload: Omit<App, 'id' | 'createdAt'> & { createdAt?: any } = {
                 name: data.name,
-                websiteUrl: data.websiteUrl,
-                apkUrl: apkUrl,
+                websiteUrl: data.websiteUrl || "",
+                apkUrl: finalApkUrl,
                 iconUrl: data.iconUrl,
                 description: data.description,
                 featureHighlights: data.featureHighlights,
@@ -158,7 +169,8 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
             onFinished();
         } catch (error) {
             console.error("Form submission error", error);
-            toast({ variant: "destructive", title: "Error", description: "Failed to save the app." });
+            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+            toast({ variant: "destructive", title: "Error", description: `Failed to save the app: ${errorMessage}` });
         } finally {
             setIsSubmitting(false);
             setUploadProgress(null);
@@ -189,7 +201,7 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                             {...fieldProps}
                             placeholder="Upload APK"
                             type="file"
-                            accept=".apk"
+                            accept=".apk,application/vnd.android.package-archive"
                             onChange={(event) => onChange(event.target.files)}
                             className="pl-9"
                             />
