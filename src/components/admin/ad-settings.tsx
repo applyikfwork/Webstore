@@ -14,7 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -89,9 +89,9 @@ export function AdSettings() {
                         
                         <FormField control={form.control} name="homePageAdCode" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Home Page Ad</FormLabel>
+                                <FormLabel>Home Page Ad Script</FormLabel>
                                 <FormControl>
-                                    <Textarea placeholder="Paste ad code for the home page..." {...field} className="min-h-[120px] font-mono text-xs" />
+                                    <Input placeholder="Paste ad script from your provider..." {...field} className="font-mono text-xs" />
                                 </FormControl>
                                 <FormDescription>This ad will be displayed on the main app listing page.</FormDescription>
                                 <div className="p-4 border-dashed border-2 rounded-lg mt-2 text-center text-muted-foreground bg-muted/50">
@@ -104,9 +104,9 @@ export function AdSettings() {
 
                          <FormField control={form.control} name="appDetailPageAdCode" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>App Detail Page Ad</FormLabel>
+                                <FormLabel>App Detail Page Ad Script</FormLabel>
                                 <FormControl>
-                                    <Textarea placeholder="Paste ad code for app detail pages..." {...field} className="min-h-[120px] font-mono text-xs" />
+                                    <Input placeholder="Paste ad script from your provider..." {...field} className="font-mono text-xs" />
                                 </FormControl>
                                 <FormDescription>This ad will be displayed on each individual app's page.</FormDescription>
                                  <div className="p-4 border-dashed border-2 rounded-lg mt-2 text-center text-muted-foreground bg-muted/50">
