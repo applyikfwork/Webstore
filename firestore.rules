@@ -1,20 +1,35 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Allow public read access for the apps collection
-    // Only authenticated admin can write (create, update, delete)
-    match /apps/{appId} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.token.email == 'xyzapplywork@gmail.com';
+  
+    // Allow admin users to read and write all documents
+    function isAdmin() {
+      return request.auth.uid != null;
     }
 
-    // Allow public read access for site settings (like the icon)
-    // Only authenticated admin can change settings
-    match /settings/{settingId} {
+    // Rules for the 'apps' collection
+    match /apps/{appId} {
+      // Anyone can read app listings
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.email == 'xyzapplywork@gmail.com';
+      
+      // Only admins can create and delete apps
+      allow create, delete: if isAdmin();
+
+      // Allow admins to update all fields.
+      // Allow anyone to update ONLY the 'downloads' field by incrementing it.
+      allow update: if isAdmin() || 
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['downloads']) &&
+         request.resource.data.downloads == resource.data.downloads + 1);
+    }
+
+    // Rules for the 'settings' collection
+    match /settings/{settingId} {
+      // Anyone can read settings (for site icon, etc.)
+      allow read: if true;
+      // Only admins can write settings
+      allow write: if isAdmin();
     }
   }
 }
