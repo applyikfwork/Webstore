@@ -66,20 +66,27 @@ export function AppDetailClient({ initialApp, appId }: AppDetailClientProps) {
   }, [appId, toast, app.createdAt]);
 
   const handleDownload = async () => {
-    if (!app?.apkUrl) return;
+    if (!app?.apkUrl) {
+      toast({
+        variant: 'destructive',
+        title: 'Download Error',
+        description: 'No APK URL found for this app.',
+      });
+      return;
+    }
+
+    // Immediately start the download for the user.
+    window.open(app.apkUrl, '_blank');
+
+    // Then, try to update the download count in the background.
     try {
-        const docRef = doc(db, "apps", appId);
-        await updateDoc(docRef, {
-            downloads: increment(1)
-        });
-        window.open(app.apkUrl, '_blank');
+      const docRef = doc(db, 'apps', appId);
+      await updateDoc(docRef, {
+        downloads: increment(1),
+      });
     } catch (error) {
-        console.error("Error updating download count", error);
-        toast({
-            variant: "destructive",
-            title: "Download Error",
-            description: "Could not process download. Please try again."
-        })
+      // If this fails, don't bother the user. Just log it.
+      console.error('Failed to update download count:', error);
     }
   };
 
