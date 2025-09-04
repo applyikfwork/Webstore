@@ -21,9 +21,7 @@ import { useState } from "react";
 import { addDoc, collection, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { App } from "@/lib/types";
-import { Wand2, Loader2, Star } from "lucide-react";
-import { generateAppDescription } from "@/ai/flows/generate-app-description";
-import { generateSeoMetadata } from "@/ai/flows/generate-seo-metadata";
+import { Loader2, Star } from "lucide-react";
 import { Switch } from "../ui/switch";
 
 
@@ -32,7 +30,6 @@ const AppFormSchema = z.object({
   websiteUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
   apkUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
   iconUrl: z.string().url("Please enter a valid URL for the icon."),
-  appDetails: z.string().min(10, "Details must be at least 10 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
   featureHighlights: z.string().min(10, "Feature highlights must be at least 10 characters."),
   version: z.string().optional(),
@@ -64,7 +61,6 @@ interface AppFormProps {
 export function AppForm({ initialData, onFinished }: AppFormProps) {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isGenerating, setIsGenerating] = useState(false);
     
     const form = useForm<AppFormValues>({
         resolver: zodResolver(AppFormSchema),
@@ -83,7 +79,6 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
             websiteUrl: "",
             apkUrl: "",
             iconUrl: "",
-            appDetails: "",
             description: "",
             featureHighlights: "",
             version: "1.0.0",
@@ -99,34 +94,6 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
             metaKeywords: '',
         },
     });
-
-    const handleGenerateContent = async () => {
-        const appName = form.getValues("name");
-        const appDetails = form.getValues("appDetails");
-        if (!appName || !appDetails) {
-            toast({ variant: "destructive", title: "Missing Info", description: "Please enter an App Name and App Details first." });
-            return;
-        }
-        setIsGenerating(true);
-        try {
-            // Generate description and features
-            const descriptionResult = await generateAppDescription({ appName, appDetails });
-            form.setValue("description", descriptionResult.description, { shouldValidate: true });
-            form.setValue("featureHighlights", descriptionResult.featureHighlights, { shouldValidate: true });
-
-            // Generate SEO metadata
-            const seoResult = await generateSeoMetadata({ appName, appDescription: descriptionResult.description });
-            form.setValue("metaDescription", seoResult.metaDescription, { shouldValidate: true });
-            form.setValue("metaKeywords", seoResult.metaKeywords, { shouldValidate: true });
-            
-            toast({ title: "Content Generated", description: "AI-powered content and SEO metadata have been added." });
-        } catch (error) {
-            console.error("AI generation failed", error);
-            toast({ variant: "destructive", title: "AI Error", description: "Failed to generate AI content." });
-        } finally {
-            setIsGenerating(false);
-        }
-    };
 
     async function onSubmit(data: AppFormValues) {
         setIsSubmitting(true);
@@ -263,24 +230,21 @@ export function AppForm({ initialData, onFinished }: AppFormProps) {
                         <FormItem><FormControl><Input placeholder="Screenshot URL 5" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                 </div>
-
-
-                <div className="relative">
-                    <FormField control={form.control} name="appDetails" render={({ field }) => (
-                        <FormItem><FormLabel>App Details for AI</FormLabel><FormControl><Textarea placeholder="Describe what your app does, its main features, target audience, etc." className="resize-y min-h-[100px]" {...field} /></FormControl><FormMessage /></FormItem>
-                    )} />
-                     <Button type="button" size="sm" variant="outline" className="absolute top-0 right-0" onClick={handleGenerateContent} disabled={isGenerating}>
-                        {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4 text-accent" />}
-                        Generate
-                    </Button>
-                </div>
                 
                 <FormField control={form.control} name="description" render={({ field }) => (
-                    <FormItem><FormLabel>Public Short Description</FormLabel><FormControl><Textarea placeholder="AI-generated description will appear here..." className="resize-y min-h-[100px]" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Public Short Description</FormLabel><FormControl><Textarea placeholder="A short, catchy description for your app." className="resize-y min-h-[100px]" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
 
                 <FormField control={form.control} name="featureHighlights" render={({ field }) => (
-                    <FormItem><FormLabel>Public Full Description / Features</FormLabel><FormControl><Textarea placeholder="AI-generated feature list will appear here..." className="resize-y" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Public Full Description / Features</FormLabel><FormControl><Textarea placeholder="Describe all the features of your app in detail." className="resize-y" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+
+                 <FormField control={form.control} name="metaDescription" render={({ field }) => (
+                    <FormItem><FormLabel>SEO Meta Description</FormLabel><FormControl><Input placeholder="A concise description for search engines." {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+
+                 <FormField control={form.control} name="metaKeywords" render={({ field }) => (
+                    <FormItem><FormLabel>SEO Keywords</FormLabel><FormControl><Input placeholder="e.g. app, tool, utility" {...field} /></FormControl><FormDescription>Comma-separated list of keywords.</FormDescription><FormMessage /></FormItem>
                 )} />
 
                 <div className="flex justify-end gap-2 pt-4">
