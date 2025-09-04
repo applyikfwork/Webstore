@@ -28,6 +28,7 @@ import { Separator } from "../ui/separator";
 
 
 const SiteSettingsSchema = z.object({
+  appName: z.string().optional(),
   iconUrl: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
   tagline: z.string().optional(),
   loginEnabled: z.boolean().default(true),
@@ -47,6 +48,7 @@ export function SiteSettings() {
     const form = useForm<SiteSettingsFormValues>({
         resolver: zodResolver(SiteSettingsSchema),
         defaultValues: {
+            appName: "MyAppStore",
             iconUrl: "",
             tagline: "",
             loginEnabled: true,
@@ -64,6 +66,7 @@ export function SiteSettings() {
             if (docSnap.exists()) {
                 const settings = docSnap.data() as SiteSettingsData;
                 setCurrentIconUrl(settings.iconUrl || null);
+                form.setValue("appName", settings.appName || "MyAppStore");
                 form.setValue("iconUrl", settings.iconUrl || "");
                 form.setValue("tagline", settings.tagline || "");
                 form.setValue("loginEnabled", settings.loginEnabled === undefined ? true : settings.loginEnabled);
@@ -103,6 +106,17 @@ export function SiteSettings() {
                  <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                         <div className="space-y-6">
+                            <FormField control={form.control} name="appName" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Site Name</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="MyAppStore" {...field} />
+                                    </FormControl>
+                                    <FormDescription>The name of your website.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                        
                             <div className="flex items-end gap-4">
                                 {loading ? (
                                     <Loader2 className="h-16 w-16 animate-spin text-muted-foreground" />

@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
     console.error("Could not fetch site settings for metadata", error);
   }
 
-  const title = settings.tagline ? `MyAppStore | ${settings.tagline}` : 'App Showcase Central - Discover and Download Apps';
+  const title = settings.tagline ? `${settings.appName || 'MyAppStore'} | ${settings.tagline}` : 'App Showcase Central - Discover and Download Apps';
   const description = 'The ultimate platform for developers to showcase their latest APKs and web applications. Discover, download, and get details on a wide variety of apps.';
 
   return {

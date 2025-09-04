@@ -62,7 +62,7 @@ export function Header() {
                     )}
                     <div className="flex flex-col">
                         <span className="font-bold sm:inline-block font-headline drop-shadow-sm">
-                           MyAppStore
+                           {settings.appName || 'MyAppStore'}
                         </span>
                         {settings.tagline && <p className="text-xs text-muted-foreground hidden md:block">{settings.tagline}</p>}
                     </div>

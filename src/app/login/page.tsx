@@ -41,8 +41,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [siteIconUrl, setSiteIconUrl] = useState<string | null>(null);
-  const [loginEnabled, setLoginEnabled] = useState(true);
+  const [siteSettings, setSiteSettings] = useState<SiteSettingsData | null>(null);
   const [settingsLoading, setSettingsLoading] = useState(true);
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -60,9 +59,7 @@ export default function LoginPage() {
             const docRef = doc(db, "settings", "site");
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
-                const settings = docSnap.data() as SiteSettingsData;
-                setSiteIconUrl(settings.iconUrl || null);
-                setLoginEnabled(settings.loginEnabled === undefined ? true : settings.loginEnabled);
+                setSiteSettings(docSnap.data() as SiteSettingsData);
             }
         } catch (error) {
             console.error("Could not fetch site settings", error);
@@ -127,14 +124,16 @@ export default function LoginPage() {
       </div>
     );
   }
+  
+  const loginEnabled = siteSettings?.loginEnabled === undefined ? true : siteSettings.loginEnabled;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-secondary/40 p-4">
       <Card className="w-full max-w-sm shadow-2xl">
         <CardHeader className="text-center space-y-4">
-            {siteIconUrl && (
+            {siteSettings?.iconUrl && (
                 <Image 
-                    src={siteIconUrl}
+                    src={siteSettings.iconUrl}
                     alt="Site Icon"
                     width={80}
                     height={80}

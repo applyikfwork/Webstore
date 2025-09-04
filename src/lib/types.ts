@@ -17,9 +17,11 @@ export interface App {
   featured?: boolean;
   metaDescription?: string;
   metaKeywords?: string;
+  appDetails?: string;
 }
 
 export interface SiteSettingsData {
+    appName?: string;
     iconUrl?: string;
     tagline?: string;
     loginEnabled?: boolean;

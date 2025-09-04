@@ -26,7 +26,7 @@ export function Footer() {
       <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4 col-span-1 md:col-span-2">
-            <h3 className="text-2xl font-bold font-headline text-primary">MyAppStore</h3>
+            <h3 className="text-2xl font-bold font-headline text-primary">{settings.appName || 'MyAppStore'}</h3>
             <p className="text-muted-foreground max-w-md">
               Discover the latest and greatest apps and websites, curated just for you. The ultimate platform for developers to showcase their latest creations.
             </p>
@@ -51,7 +51,7 @@ export function Footer() {
 
         <div className="mt-8 pt-8 border-t flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground">
           <div className="flex flex-col sm:flex-row gap-x-4 gap-y-2 text-center">
-            <p>&copy; {new Date().getFullYear()} MyAppStore. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} {settings.appName || 'MyAppStore'}. All rights reserved.</p>
             <p className="hidden sm:block">|</p>
             <p>Created by Jitender Prajapat</p>
           </div>
